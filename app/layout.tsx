@@ -1,14 +1,8 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import {
-  SidebarProvider,
-  SidebarInset,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
-import { Separator } from "@/components/ui/separator";
-import { GlobalBreadcrumb } from "@/components/global-breadcrumb";
+import { SessionProvider } from "@/components/providers/session-provider";
+import { AuthenticatedLayout } from "@/components/layout/authenticated-layout";
 import BProgressBar from "@/lib/bprogressBar";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -41,22 +35,12 @@ export default function RootLayout({
         className="antialiased font-sans lg:min-h-[800px]"
         style={{ fontFamily: "'Spoqa Han Sans Neo', 'sans-serif'" }}
       >
-        <BProgressBar>
-          <SidebarProvider>
-            <AppSidebar />
-            <SidebarInset>
-              <header className="sticky top-0 z-50 bg-background flex h-16 shrink-0 items-center gap-2 border-b px-4">
-                <SidebarTrigger />
-                <Separator orientation="vertical" className="mr-2 h-4" />
-                <GlobalBreadcrumb />
-              </header>
-              <div className="flex flex-1 flex-col gap-4 p-4 md:p-4 lg:p-6 max-w-7xl mx-auto w-full">
-                {children}
-              </div>
-            </SidebarInset>
-          </SidebarProvider>
-          <Toaster position="top-right" />
-        </BProgressBar>
+        <SessionProvider>
+          <BProgressBar>
+            <AuthenticatedLayout>{children}</AuthenticatedLayout>
+            <Toaster position="top-right" />
+          </BProgressBar>
+        </SessionProvider>
       </body>
     </html>
   );

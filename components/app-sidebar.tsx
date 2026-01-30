@@ -5,9 +5,11 @@ import {
   ShoppingBasket01Icon,
   Settings02Icon,
   Layout01Icon,
+  Logout03Icon,
 } from "@hugeicons/core-free-icons";
 
 import { HugeiconsIcon } from "@hugeicons/react";
+import { signOut } from "next-auth/react";
 
 import {
   Sidebar,
@@ -16,6 +18,7 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
+  SidebarFooter,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -78,6 +81,19 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              tooltip="로그아웃"
+            >
+              <HugeiconsIcon icon={Logout03Icon} size={20} />
+              <span>로그아웃</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );
