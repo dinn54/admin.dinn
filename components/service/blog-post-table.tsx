@@ -83,12 +83,14 @@ export function BlogPostTable({
           <TableHeader>
             <TableRow>
               <TableHead className="w-[80px]">ID</TableHead>
-              <TableHead>제목</TableHead>
+              <TableHead className="min-w-[240px]">제목</TableHead>
               <TableHead>상태</TableHead>
               <TableHead>작성자</TableHead>
               <TableHead className="w-[100px]">생성일</TableHead>
-              <TableHead className="w-[80px]">좋아요</TableHead>
-              <TableHead>태그</TableHead>
+              <TableHead className="hidden xl:table-cell w-[80px]">
+                좋아요
+              </TableHead>
+              <TableHead className="hidden xl:table-cell">태그</TableHead>
               <TableHead className="text-right w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -102,10 +104,10 @@ export function BlogPostTable({
                 <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
                   {post.id.slice(-6)}
                 </TableCell>
-                <TableCell className="font-medium">
+                <TableCell className="min-w-[240px] max-w-[320px] font-medium truncate">
                   {post.title}
                   {post.subtitle && (
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-[300px]">
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
                       {post.subtitle}
                     </p>
                   )}
@@ -149,17 +151,13 @@ export function BlogPostTable({
                 <TableCell className="text-sm text-muted-foreground tabular-nums whitespace-nowrap">
                   {post.createdAt || "-"}
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground tabular-nums whitespace-nowrap pl-4">
+                <TableCell className="hidden xl:table-cell text-sm text-muted-foreground tabular-nums whitespace-nowrap pl-4">
                   {post.likes}
                 </TableCell>
-                <TableCell>
+                <TableCell className="hidden xl:table-cell">
                   <div className="flex flex-wrap gap-1 items-center">
                     {post.tags?.slice(0, 3).map((tag, i) => (
-                      <Badge
-                        key={i}
-                        variant="secondary"
-                        size="xs"
-                      >
+                      <Badge key={i} variant="secondary" size="xs">
                         {tag}
                       </Badge>
                     ))}

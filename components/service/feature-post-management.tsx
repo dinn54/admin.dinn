@@ -49,7 +49,9 @@ export function FeaturePostManagement({
       toast.success("게시글이 삭제되었습니다.");
     } catch (error) {
       console.error("Delete error:", error);
-      toast.error(error instanceof Error ? error.message : "삭제에 실패했습니다.");
+      toast.error(
+        error instanceof Error ? error.message : "삭제에 실패했습니다.",
+      );
     }
   };
 
@@ -58,7 +60,9 @@ export function FeaturePostManagement({
     const targetPosts = status === "draft" ? draftPostsList : unlistedPostsList;
     if (targetPosts.length > 0) {
       const latestPost = targetPosts[0]; // 이미 최신순 정렬됨
-      router.push(`/services/${name}/${slug}/${encodeURIComponent(latestPost.title)}/edit`);
+      router.push(
+        `/services/${name}/${slug}/${encodeURIComponent(latestPost.title)}/edit`,
+      );
     }
   };
 
@@ -82,14 +86,18 @@ export function FeaturePostManagement({
           value={draftPosts}
           icon={PencilEdit01Icon}
           description="작성 중인 글"
-          onIconClick={draftPosts > 0 ? () => handleEditLatest("draft") : undefined}
+          onIconClick={
+            draftPosts > 0 ? () => handleEditLatest("draft") : undefined
+          }
         />
         <SummaryCard
           title="미게시"
           value={unlistedPosts}
           icon={PencilEdit01Icon}
           description="비공개로 저장된 글"
-          onIconClick={unlistedPosts > 0 ? () => handleEditLatest("unlisted") : undefined}
+          onIconClick={
+            unlistedPosts > 0 ? () => handleEditLatest("unlisted") : undefined
+          }
         />
       </div>
 
