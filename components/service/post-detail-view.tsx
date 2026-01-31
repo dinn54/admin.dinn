@@ -1,24 +1,33 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowUp, Bookmark, Calendar, Clock } from "lucide-react";
 import { useRouter } from "@bprogress/next";
 import Link from "next/link";
-import LexicalRenderer from "../editor/ui/LexicalRenderer";
 import { Post } from "@/app/services/[name]/[slug]/[postTitle]/page";
+import { parseMarkdownToLexicalNodes } from "@/lib/parseMarkdownServer";
+import ServerLexicalRenderer from "@/components/editor/ui/ServerLexicalRenderer";
 
 interface PostDetailViewProps {
   post: Post;
   showBackButton?: boolean;
+  children?: React.ReactNode;
 }
 
 export function PostDetailView({
   post,
   showBackButton = true,
+  children,
 }: PostDetailViewProps) {
   const router = useRouter();
+
+  // 미리보기용: children이 없을 때 클라이언트에서 마크다운 파싱
+  const parsedNodes = useMemo(() => {
+    if (children || !post.content) return null;
+    return parseMarkdownToLexicalNodes(post.content);
+  }, [children, post.content]);
 
   const handleScrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -245,10 +254,12 @@ export function PostDetailView({
           </div>
         </header>
 
-        {/* Client Component Renderer */}
+        {/* Content: Server-rendered children or parsed nodes for preview */}
         <div id="post-content">
-          {post.content ? (
-            <LexicalRenderer markdown={post.content} />
+          {children ? (
+            children
+          ) : parsedNodes && parsedNodes.length > 0 ? (
+            <ServerLexicalRenderer nodes={parsedNodes} />
           ) : (
             <div className="py-20 text-center text-slate-500">
               <p>콘텐츠를 불러올 수 없습니다.</p>
