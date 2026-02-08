@@ -29,6 +29,7 @@ import {
 import { $setBlocksType } from "@lexical/selection";
 import {
   $isCodeNode,
+  $createCodeNode,
   CODE_LANGUAGE_MAP,
   CODE_LANGUAGE_FRIENDLY_NAME_MAP,
 } from "@lexical/code";
@@ -38,6 +39,7 @@ import {
   Underline,
   Strikethrough,
   Code,
+  FileCode,
   Link,
   List,
   ListOrdered,
@@ -279,6 +281,19 @@ export default function ToolbarPlugin() {
     }
   };
 
+  const formatCode = () => {
+    if (blockType !== "code") {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $setBlocksType(selection, () => $createCodeNode());
+        }
+      });
+    } else {
+      formatParagraph();
+    }
+  };
+
   const insertLink = useCallback(() => {
     if (!isLink) {
       editor.dispatchCommand(TOGGLE_LINK_COMMAND, "https://");
@@ -358,6 +373,7 @@ export default function ToolbarPlugin() {
           else if (value === "quote") formatQuote();
           else if (value === "ul") formatBulletList();
           else if (value === "ol") formatNumberedList();
+          else if (value === "code") formatCode();
         }}
       >
         <SelectTrigger className="w-[140px] h-8">
@@ -371,6 +387,7 @@ export default function ToolbarPlugin() {
           <SelectItem value="quote">인용구</SelectItem>
           <SelectItem value="ul">글머리 기호 목록</SelectItem>
           <SelectItem value="ol">번호 매기기 목록</SelectItem>
+          <SelectItem value="code">코드 블록</SelectItem>
         </SelectContent>
       </Select>
 
@@ -425,6 +442,14 @@ export default function ToolbarPlugin() {
         className="h-8 w-8 p-0"
       >
         <Code className="h-4 w-4" />
+      </Toggle>
+      <Toggle
+        pressed={blockType === "code"}
+        onPressedChange={formatCode}
+        aria-label="Toggle code block"
+        className="h-8 w-8 p-0"
+      >
+        <FileCode className="h-4 w-4" />
       </Toggle>
 
       <div className="w-[1px] h-6 bg-border mx-1" />
