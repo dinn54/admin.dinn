@@ -35,11 +35,6 @@ export interface LexicalNode {
   language?: string;
   rows?: LexicalNode[];
   checked?: boolean;
-  equation?: string;
-  inline?: boolean;
-  xOffset?: number;
-  yOffset?: number;
-  caption?: LexicalNode;
 }
 
 const ServerEditorNodes = [

@@ -51,11 +51,6 @@ export interface LexicalNode {
   language?: string;
   rows?: LexicalNode[];
   checked?: boolean;
-  equation?: string;
-  inline?: boolean;
-  xOffset?: number;
-  yOffset?: number;
-  caption?: LexicalNode;
 }
 
 // Theme Definition - Synced with theme.ts
@@ -322,42 +317,11 @@ function NodeRenderer({ node }: { node: LexicalNode }) {
         </td>
       );
 
-    case "equation":
-      return (
-        <span className="bg-muted mb-1 inline-block rounded px-1 font-mono text-sm">
-          {node.equation}
-        </span>
-      );
-
     case "text":
       return <TextRenderer node={node} />;
 
     case "linebreak":
       return <br />;
-
-    case "layout-container":
-      return (
-        <div className="my-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-          {renderChildren(node)}
-        </div>
-      );
-    case "layout-item":
-      return <div className="">{renderChildren(node)}</div>;
-
-    case "collapsible-container":
-      return (
-        <details className="border-muted my-4 rounded-lg border p-2" open>
-          {renderChildren(node)}
-        </details>
-      );
-    case "collapsible-title":
-      return (
-        <summary className="hover:bg-muted cursor-pointer list-none rounded p-2 font-medium">
-          {renderChildren(node)}
-        </summary>
-      );
-    case "collapsible-content":
-      return <div className="mt-2 p-2">{renderChildren(node)}</div>;
 
     default:
       return <>{renderChildren(node)}</>;
