@@ -32,7 +32,7 @@ const theme = {
   rtl: "rtl",
   placeholder: "editor-placeholder",
   paragraph: "editor-paragraph",
-  quote: "editor-quote border-l-4 border-muted pl-4 italic text-muted-foreground my-2",
+  quote: "editor-quote blockquote-fancy",
   heading: {
     h1: "editor-heading-h1 text-3xl font-bold mt-4 mb-2 scroll-m-20 tracking-tight",
     h2: "editor-heading-h2 text-2xl font-semibold mt-4 mb-2 scroll-m-20 tracking-tight",

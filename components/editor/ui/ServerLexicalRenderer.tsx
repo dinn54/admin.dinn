@@ -60,7 +60,7 @@ export const editorTheme = {
   rtl: "rtl",
   placeholder: "editor-placeholder",
   paragraph: "mb-6 text-[15px] leading-[1.8] text-slate-700 dark:text-slate-300 tracking-normal",
-  quote: "not-prose relative block rounded-xl bg-zinc-100 dark:bg-zinc-800/50 px-4 py-3 my-8 text-[15px] font-medium leading-loose text-zinc-700 dark:text-zinc-300 font-callout",
+  quote: "not-prose blockquote-fancy",
   heading: {
     h1: "font-heading scroll-m-20 text-2xl font-extrabold tracking-tight lg:text-3xl mb-4 mt-10 md:mt-12 text-slate-900 dark:text-white first:mt-0",
     h2: "font-heading scroll-m-20 text-xl font-bold tracking-tight mb-3 mt-10 md:mt-12 text-slate-900 dark:text-white",
