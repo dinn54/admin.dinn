@@ -89,6 +89,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 태그 연결 처리
+    if (tags && Array.isArray(tags) && tags.length > 0) {
+      await syncPostTags(post.id, tags);
+    }
+
     revalidateTag("table:dinn_posts", { expire: 0 });
     return NextResponse.json({ data: post, status: getStatusFromPost(post) });
   } catch (error) {
@@ -104,4 +109,66 @@ function getStatusFromPost(post: { is_visible: boolean | null; published_at: str
   if (post.is_visible) return "published";
   if (post.published_at) return "unlisted";
   return "draft";
+}
+
+async function syncPostTags(postId: string, tags: string[]) {
+  try {
+    // 1. 기존 태그 연결 조회
+    const { data: existingConnections } = await supabase
+      .from("dinn_post_tags_connect")
+      .select("tag_id, dinn_post_tags(name)")
+      .eq("post_id", postId);
+
+    const existingTagNames = new Set(
+      existingConnections?.map((c: any) => c.dinn_post_tags?.name) || []
+    );
+    const newTagNames = new Set(tags);
+
+    // 2. 삭제할 태그 연결 찾기
+    const tagsToRemove = existingConnections?.filter(
+      (c: any) => !newTagNames.has(c.dinn_post_tags?.name)
+    ) || [];
+
+    // 3. 추가할 태그 찾기
+    const tagsToAdd = tags.filter((tag) => !existingTagNames.has(tag));
+
+    // 4. 삭제할 연결 제거 (트리거가 count 감소시킴)
+    if (tagsToRemove.length > 0) {
+      const tagIdsToRemove = tagsToRemove.map((c: any) => c.tag_id);
+      await supabase
+        .from("dinn_post_tags_connect")
+        .delete()
+        .eq("post_id", postId)
+        .in("tag_id", tagIdsToRemove);
+    }
+
+    // 5. 새 태그 추가
+    for (const tagName of tagsToAdd) {
+      // 태그가 존재하는지 확인
+      let { data: existingTag } = await supabase
+        .from("dinn_post_tags")
+        .select("id")
+        .eq("name", tagName)
+        .single();
+
+      // 태그가 없으면 생성
+      if (!existingTag) {
+        const { data: newTag } = await supabase
+          .from("dinn_post_tags")
+          .insert({ name: tagName, count: 0 })
+          .select("id")
+          .single();
+        existingTag = newTag;
+      }
+
+      // 연결 생성 (트리거가 count 증가시킴)
+      if (existingTag) {
+        await supabase
+          .from("dinn_post_tags_connect")
+          .insert({ post_id: postId, tag_id: existingTag.id });
+      }
+    }
+  } catch (error) {
+    console.error("Error syncing post tags:", error);
+  }
 }
