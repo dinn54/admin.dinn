@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Eye, Loader2 } from "lucide-react";
+import { ArrowLeft, Eye, FileText, Loader2 } from "lucide-react";
 import { Editor } from "@/components/editor/editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { TagInput } from "./tag-input";
 import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { PreviewDrawer } from "./preview-drawer";
 import { toast } from "sonner";
 
@@ -80,6 +87,9 @@ export default function PostEditorView({
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isHiddenOnPublish, setIsHiddenOnPublish] = useState(false);
+  const [editorKey, setEditorKey] = useState(0);
+  const [markdownInput, setMarkdownInput] = useState("");
+  const [isMarkdownDialogOpen, setIsMarkdownDialogOpen] = useState(false);
 
   /* Initialize from initialData */
   useEffect(() => {
@@ -284,7 +294,7 @@ export default function PostEditorView({
             <div className="absolute inset-0">
               <div className="max-w-3xl mx-auto w-full py-3 px-6 h-full">
                 <Editor
-                  key={initialData?.id || "new"}
+                  key={initialData?.id ? `${initialData.id}-${editorKey}` : `new-${editorKey}`}
                   markdown={markdown}
                   onChange={setMarkdown}
                   readOnly={false}
@@ -337,11 +347,58 @@ export default function PostEditorView({
             <Input
               value={author}
               disabled
-              className="bg-muted text-muted-foreground mb-10"
+              className="bg-muted text-muted-foreground"
             />
           </div>
+
+          <Separator />
+
+          {/* Markdown Import */}
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => {
+              setMarkdownInput("");
+              setIsMarkdownDialogOpen(true);
+            }}
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            마크다운 가져오기
+          </Button>
         </div>
       </div>
+
+      <Dialog open={isMarkdownDialogOpen} onOpenChange={setIsMarkdownDialogOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>마크다운 가져오기</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            placeholder="마크다운 텍스트를 붙여넣으세요..."
+            className="min-h-[400px] font-mono text-sm resize-none"
+            value={markdownInput}
+            onChange={(e) => setMarkdownInput(e.target.value)}
+          />
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsMarkdownDialogOpen(false)}
+            >
+              취소
+            </Button>
+            <Button
+              onClick={() => {
+                setMarkdown(markdownInput);
+                setEditorKey((k) => k + 1);
+                setIsMarkdownDialogOpen(false);
+              }}
+              disabled={!markdownInput.trim()}
+            >
+              적용
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <PreviewDrawer
         isOpen={isPreviewOpen}
