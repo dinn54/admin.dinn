@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import React, { Fragment } from "react";
+import React, { Fragment, Suspense } from "react";
+import { TweetEmbed } from "./TweetEmbed";
 
 // Refractor for Server-Side Syntax Highlighting
 import { refractor } from "refractor";
@@ -283,12 +284,19 @@ function NodeRenderer({ node }: { node: LexicalNode }) {
     case "tweet": {
       const tweetWidth = typeof node.width === "number" ? node.width : 450;
       return (
-        <div className="my-8" style={{ width: tweetWidth, maxWidth: "100%" }}>
-          <blockquote className="twitter-tweet">
-            <a href={`https://twitter.com/x/status/${node.tweetID}`}>
-              Loading tweet...
-            </a>
-          </blockquote>
+        <div className="my-8">
+          <Suspense
+            fallback={
+              <div
+                className="animate-pulse bg-muted rounded-lg h-48 flex items-center justify-center"
+                style={{ width: tweetWidth, maxWidth: "100%" }}
+              >
+                <span className="text-muted-foreground">트윗 로딩 중...</span>
+              </div>
+            }
+          >
+            <TweetEmbed id={node.tweetID || ""} width={tweetWidth} />
+          </Suspense>
         </div>
       );
     }
