@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { PreviewDrawer } from "./preview-drawer";
 import { toast } from "sonner";
+import { preprocessMarkdown } from "@/lib/preprocessMarkdown";
 
 export interface PostData {
   id?: string;
@@ -369,16 +370,18 @@ export default function PostEditorView({
       </div>
 
       <Dialog open={isMarkdownDialogOpen} onOpenChange={setIsMarkdownDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-2xl h-[80vh] max-h-[700px] flex flex-col">
           <DialogHeader>
             <DialogTitle>마크다운 가져오기</DialogTitle>
           </DialogHeader>
-          <Textarea
-            placeholder="마크다운 텍스트를 붙여넣으세요..."
-            className="min-h-[400px] font-mono text-sm resize-none"
-            value={markdownInput}
-            onChange={(e) => setMarkdownInput(e.target.value)}
-          />
+          <div className="min-h-0 flex-1">
+            <Textarea
+              placeholder="마크다운 텍스트를 붙여넣으세요..."
+              className="h-full min-h-0 font-mono text-sm resize-none overflow-y-auto [field-sizing:fixed]"
+              value={markdownInput}
+              onChange={(e) => setMarkdownInput(e.target.value)}
+            />
+          </div>
           <DialogFooter>
             <Button
               variant="outline"
@@ -388,7 +391,7 @@ export default function PostEditorView({
             </Button>
             <Button
               onClick={() => {
-                setMarkdown(markdownInput);
+                setMarkdown(preprocessMarkdown(markdownInput));
                 setEditorKey((k) => k + 1);
                 setIsMarkdownDialogOpen(false);
               }}

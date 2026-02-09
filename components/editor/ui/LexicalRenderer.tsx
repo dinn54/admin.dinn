@@ -4,7 +4,7 @@ import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { EditorNodes } from "../nodes";
 import theme from "../theme";
 import CodeHighlightPlugin from "../plugins/code-highlight-plugin";
@@ -30,7 +30,7 @@ export default function LexicalRenderer({ markdown }: LexicalRendererProps) {
     if (!markdown) return "";
 
     // 1. Unescape basic characters & Normalize
-    let processed = markdown
+    const processed = markdown
       .replace(/\\"/g, '"')
       .replace(/\\n/g, "\n")
       .replace(/\\`/g, "`")
