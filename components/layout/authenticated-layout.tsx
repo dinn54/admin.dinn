@@ -25,7 +25,7 @@ export function AuthenticatedLayout({
 
   // Authenticated pages - with sidebar
   return (
-    <SidebarProvider>
+    <SidebarProvider className="lg:min-h-[800px]">
       <AppSidebar />
       <SidebarInset>
         <header className="sticky top-0 z-50 bg-background flex h-16 shrink-0 items-center gap-2 border-b px-4">

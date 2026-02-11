@@ -33,7 +33,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className="antialiased font-sans lg:min-h-[800px]"
+        className="antialiased font-sans"
         style={{ fontFamily: "'Spoqa Han Sans Neo', 'sans-serif'" }}
       >
         <SessionProvider>
