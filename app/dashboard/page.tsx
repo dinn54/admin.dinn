@@ -34,7 +34,7 @@ export default async function DashboardPage() {
         {/* Left Main Content */}
         <div className="lg:col-span-2 xl:col-span-3 space-y-8">
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fit,minmax(140px,1fr))] sm:gap-3 md:grid-cols-[repeat(auto-fit,minmax(160px,1fr))] md:gap-4 lg:grid-cols-[repeat(auto-fit,minmax(180px,1fr))] xl:grid-cols-[repeat(auto-fit,minmax(200px,1fr))] xl:gap-5">
+          <div className="grid grid-cols-2 gap-3 min-[500px]:grid-cols-[repeat(auto-fit,minmax(140px,1fr))] md:grid-cols-[repeat(auto-fit,minmax(160px,1fr))] md:gap-4 lg:grid-cols-[repeat(auto-fit,minmax(180px,1fr))] xl:grid-cols-[repeat(auto-fit,minmax(200px,1fr))] xl:gap-5">
             {summaryData.map((data) => (
               <SummaryCard key={data.title} {...data} />
             ))}

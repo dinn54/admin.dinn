@@ -5,7 +5,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -28,22 +27,8 @@ export function ServiceCard({
   thumbnail,
   icon,
 }: ServiceCardProps) {
-  const statusMap = {
-    Active: "활성",
-    Inactive: "비활성",
-    Draft: "초안",
-  };
-
-  const statusColorMap = {
-    Active:
-      "bg-emerald-500/90 text-white hover:bg-emerald-600/90 dark:text-white",
-    Inactive: "bg-red-500/90 text-white hover:bg-red-600/90 dark:text-white",
-    Draft:
-      "bg-neutral-500/90 text-white hover:bg-neutral-600/90 dark:text-white",
-  };
-
   return (
-    <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300">
+    <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 pt-0">
       <div className="aspect-video w-full bg-secondary/30 flex items-center justify-center relative overflow-hidden group-hover:bg-secondary/50 transition-colors">
         {thumbnail ? (
           <img
@@ -56,11 +41,6 @@ export function ServiceCard({
             <HugeiconsIcon icon={icon || Layers01Icon} size={64} />
           </div>
         )}
-        <Badge
-          className={`absolute top-3 right-3 shadow-sm ${statusColorMap[status]} border-none`}
-        >
-          {statusMap[status]}
-        </Badge>
       </div>
 
       <CardHeader className="pb-2">

@@ -22,11 +22,11 @@ export default function SettingsPage() {
           <CardContent className="space-y-4 opacity-50 pointer-events-none select-none">
             <div className="grid gap-2">
               <Label htmlFor="system-name">시스템 이름</Label>
-              <Input id="system-name" defaultValue="Dinn 관리자 시스템" disabled />
+              <Input id="system-name" defaultValue="Admin Dinn" disabled />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="admin-email">관리자 이메일</Label>
-              <Input id="admin-email" defaultValue="admin@example.com" disabled />
+              <Input id="admin-email" defaultValue="joodinner@gmail.com" disabled />
             </div>
           </CardContent>
         </Card>
