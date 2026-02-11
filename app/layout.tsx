@@ -15,6 +15,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Admin Dinn",
   description: "내부 서비스 관리 시스템",
+  icons: 'https://mowzqxruruhcvjgpzzdb.supabase.co/storage/v1/object/public/dinn_dev/logo_dinn.png'
 };
 
 export default function RootLayout({
