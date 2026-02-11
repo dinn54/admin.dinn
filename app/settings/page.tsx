@@ -19,14 +19,14 @@ export default function SettingsPage() {
             <CardTitle>시스템 프로필</CardTitle>
             <CardDescription>관리자 시스템에 대한 일반 정보입니다.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 opacity-50 pointer-events-none select-none">
             <div className="grid gap-2">
               <Label htmlFor="system-name">시스템 이름</Label>
-              <Input id="system-name" defaultValue="Dinn 관리자 시스템" />
+              <Input id="system-name" defaultValue="Dinn 관리자 시스템" disabled />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="admin-email">관리자 이메일</Label>
-              <Input id="admin-email" defaultValue="admin@example.com" />
+              <Input id="admin-email" defaultValue="admin@example.com" disabled />
             </div>
           </CardContent>
         </Card>
@@ -36,13 +36,13 @@ export default function SettingsPage() {
             <CardTitle>알림</CardTitle>
             <CardDescription>수신할 알림을 제어합니다.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 opacity-50 pointer-events-none select-none">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label>이메일 알림</Label>
                 <p className="text-[0.625rem]/relaxed text-muted-foreground">매일 요약을 이메일로 받습니다.</p>
               </div>
-              <Switch defaultChecked />
+              <Switch disabled />
             </div>
             <Separator />
             <div className="flex items-center justify-between">
@@ -50,14 +50,14 @@ export default function SettingsPage() {
                 <Label>시스템 경고</Label>
                 <p className="text-[0.625rem]/relaxed text-muted-foreground">치명적인 시스템 이벤트에 대한 실시간 경고를 받습니다.</p>
               </div>
-              <Switch defaultChecked />
+              <Switch disabled />
             </div>
           </CardContent>
         </Card>
 
         <div className="flex justify-end gap-2">
-          <Button variant="outline">기본값으로 재설정</Button>
-          <Button>구성 저장</Button>
+          <Button variant="outline" disabled>기본값으로 재설정</Button>
+          <Button disabled>구성 저장</Button>
         </div>
       </div>
     </div>
