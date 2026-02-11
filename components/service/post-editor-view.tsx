@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Eye, FileText, Loader2 } from "lucide-react";
+import { ArrowLeft, Eye, FileText, Loader2, Settings2 } from "lucide-react";
 import { Editor } from "@/components/editor/editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,12 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { PreviewDrawer } from "./preview-drawer";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { preprocessMarkdown } from "@/lib/preprocessMarkdown";
 
@@ -91,6 +97,7 @@ export default function PostEditorView({
   const [editorKey, setEditorKey] = useState(0);
   const [markdownInput, setMarkdownInput] = useState("");
   const [isMarkdownDialogOpen, setIsMarkdownDialogOpen] = useState(false);
+  const [isMetadataSheetOpen, setIsMetadataSheetOpen] = useState(false);
 
   /* Initialize from initialData */
   useEffect(() => {
@@ -229,6 +236,52 @@ export default function PostEditorView({
 
   const statusConfig = STATUS_CONFIG[status];
 
+  const metadataContent = (
+    <>
+      <div className="space-y-3">
+        <Label>부제목</Label>
+        <Textarea
+          placeholder="부제목을 입력하세요..."
+          className="resize-none h-20 text-sm leading-relaxed"
+          value={subtitle}
+          onChange={(e) => setSubtitle(e.target.value)}
+        />
+      </div>
+      <Separator />
+      <TagInput tags={tags} setTags={setTags} />
+      <div className="space-y-3">
+        <Label>읽는 시간 (분)</Label>
+        <Input
+          type="number"
+          min={0}
+          placeholder="예: 5"
+          value={readTime}
+          onChange={(e) => setReadTime(parseInt(e.target.value) || 0)}
+        />
+      </div>
+      <div className="space-y-3">
+        <Label>작성자</Label>
+        <Input
+          value={author}
+          disabled
+          className="bg-muted text-muted-foreground"
+        />
+      </div>
+      <Separator />
+      <Button
+        variant="outline"
+        className="w-full"
+        onClick={() => {
+          setMarkdownInput(markdown);
+          setIsMarkdownDialogOpen(true);
+        }}
+      >
+        <FileText className="w-4 h-4 mr-2" />
+        마크다운 가져오기
+      </Button>
+    </>
+  );
+
   return (
     <div className="flex flex-col h-full">
       {/* Header Actions */}
@@ -251,6 +304,14 @@ export default function PostEditorView({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="lg:hidden"
+            onClick={() => setIsMetadataSheetOpen(true)}
+          >
+            <Settings2 className="w-4 h-4" />
+          </Button>
           {initialData?.status === "draft" || !initialData ? (
             <Button
               variant="outline"
@@ -312,62 +373,23 @@ export default function PostEditorView({
           className="hidden lg:block w-px min-h-full"
         />
 
-        {/* Sidebar Metadata */}
-        <div className="w-full lg:w-[350px] shrink-0 bg-slate-50/50 dark:bg-slate-900/20 p-6 space-y-6 border-b lg:border-b-0 lg:overflow-y-auto">
-          {/* Tags */}
-          <TagInput tags={tags} setTags={setTags} />
-
-          <Separator />
-
-          {/* Subtitle */}
-          <div className="space-y-3">
-            <Label>부제목</Label>
-            <Textarea
-              placeholder="부제목을 입력하세요..."
-              className="resize-none h-20 text-sm leading-relaxed"
-              value={subtitle}
-              onChange={(e) => setSubtitle(e.target.value)}
-            />
-          </div>
-
-          {/* Read Time */}
-          <div className="space-y-3">
-            <Label>읽는 시간 (분)</Label>
-            <Input
-              type="number"
-              min={0}
-              placeholder="예: 5"
-              value={readTime}
-              onChange={(e) => setReadTime(parseInt(e.target.value) || 0)}
-            />
-          </div>
-
-          {/* Author */}
-          <div className="space-y-3">
-            <Label>작성자</Label>
-            <Input
-              value={author}
-              disabled
-              className="bg-muted text-muted-foreground"
-            />
-          </div>
-
-          <Separator />
-
-          {/* Markdown Import */}
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => {
-              setMarkdownInput(markdown);
-              setIsMarkdownDialogOpen(true);
-            }}
-          >
-            <FileText className="w-4 h-4 mr-2" />
-            마크다운 가져오기
-          </Button>
+        {/* Desktop Sidebar Metadata */}
+        <div className="hidden lg:block lg:w-[350px] shrink-0 bg-slate-50/50 dark:bg-slate-900/20 p-6 space-y-6 overflow-y-auto">
+          {metadataContent}
         </div>
       </div>
+
+      {/* Mobile Metadata Sheet */}
+      <Sheet open={isMetadataSheetOpen} onOpenChange={setIsMetadataSheetOpen}>
+        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>게시글 설정</SheetTitle>
+          </SheetHeader>
+          <div className="px-6 pb-6 space-y-6">
+            {metadataContent}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <Dialog open={isMarkdownDialogOpen} onOpenChange={setIsMarkdownDialogOpen}>
         <DialogContent className="sm:max-w-2xl h-[80vh] max-h-[700px] flex flex-col">
