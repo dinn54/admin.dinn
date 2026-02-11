@@ -359,7 +359,7 @@ export default function PostEditorView({
             variant="outline"
             className="w-full"
             onClick={() => {
-              setMarkdownInput("");
+              setMarkdownInput(markdown);
               setIsMarkdownDialogOpen(true);
             }}
           >
