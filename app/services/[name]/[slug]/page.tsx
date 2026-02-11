@@ -46,6 +46,7 @@ export default async function ServiceFeaturePage({
     const formattedPosts = rawData.map((item: any) => ({
       id: item.id,
       title: item.title,
+      slug: item.slug || "",
       subtitle: item.description || "",
       tags: item.tags || [],
       readTime:

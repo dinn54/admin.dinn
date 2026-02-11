@@ -10,11 +10,11 @@ import { estimateReadTimeMinutes } from "@/lib/utils";
 export default async function EditPostPage({
   params,
 }: {
-  params: Promise<{ name: string; slug: string; postTitle: string }>;
+  params: Promise<{ name: string; slug: string; postSlug: string }>;
 }) {
-  const { name, slug, postTitle } = await params;
+  const { name, slug, postSlug } = await params;
   const decodedName = decodeURIComponent(name);
-  const decodedTitle = decodeURIComponent(postTitle);
+  const decodedPostSlug = decodeURIComponent(postSlug);
 
   // 1. Get Service
   const service = await getServiceByName(decodedName);
@@ -27,8 +27,8 @@ export default async function EditPostPage({
   // 3. Get Post Data
   const rawPost = await fetchRowByColumn(
     feature.table_name,
-    "title",
-    decodedTitle
+    "slug",
+    decodedPostSlug
   );
 
   if (!rawPost) return notFound();

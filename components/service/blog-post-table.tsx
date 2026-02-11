@@ -44,6 +44,7 @@ export interface Author {
 export interface BlogPost {
   id: string;
   title: string;
+  slug: string;
   subtitle?: string;
   tags?: string[];
   readTime?: number;

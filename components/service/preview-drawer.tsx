@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { PostDetailView } from "./post-detail-view";
-import { Post } from "@/app/services/[name]/[slug]/[postTitle]/page";
+import { Post } from "@/app/services/[name]/[slug]/[postSlug]/page";
 import { ArrowLeft, Rocket } from "lucide-react";
 
 interface PreviewDrawerProps {

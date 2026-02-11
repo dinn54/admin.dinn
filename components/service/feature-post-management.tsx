@@ -61,7 +61,7 @@ export function FeaturePostManagement({
     if (targetPosts.length > 0) {
       const latestPost = targetPosts[0]; // 이미 최신순 정렬됨
       router.push(
-        `/services/${name}/${slug}/${encodeURIComponent(latestPost.title)}/edit`,
+        `/services/${name}/${slug}/${latestPost.slug}/edit`,
       );
     }
   };
@@ -124,11 +124,11 @@ export function FeaturePostManagement({
           posts={posts}
           onRowClick={(post) => {
             const { name, slug } = params as { name: string; slug: string };
-            router.push(`/services/${name}/${slug}/${post.title}`);
+            router.push(`/services/${name}/${slug}/${post.slug}`);
           }}
           onEdit={(post) => {
             const { name, slug } = params as { name: string; slug: string };
-            router.push(`/services/${name}/${slug}/${post.title}/edit`);
+            router.push(`/services/${name}/${slug}/${post.slug}/edit`);
           }}
           onDelete={handleDeletePost}
         />
