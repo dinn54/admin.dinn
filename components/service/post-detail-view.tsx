@@ -40,14 +40,6 @@ export function PostDetailView({
     return pathname.endsWith("/") ? `${pathname}edit` : `${pathname}/edit`;
   }, [pathname]);
 
-  const servicePath = useMemo(() => {
-    if (!pathname) return "/services";
-    const segments = pathname.split("/").filter(Boolean);
-    // /services/[name]/... -> /services/[name]
-    if (segments.length >= 2) return `/${segments.slice(0, 2).join("/")}`;
-    return "/services";
-  }, [pathname]);
-
   const listPath = useMemo(() => {
     if (!pathname) return "/services";
     const segments = pathname.split("/").filter(Boolean);
@@ -265,11 +257,11 @@ export function PostDetailView({
         {showBackButton && (
           <div className="mb-8 flex items-center justify-between gap-3">
             <button
-              onClick={() => router.push(servicePath)}
+              onClick={() => router.back()}
               className="group flex w-fit items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-teal-600 dark:text-slate-400 dark:hover:text-teal-400"
             >
               <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-              서비스로 돌아가기
+              목록으로 돌아가기
             </button>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" className="gap-1.5" onClick={handleEdit}>

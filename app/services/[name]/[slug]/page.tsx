@@ -85,6 +85,7 @@ export default async function ServiceFeaturePage({
         title={service.name}
         description={`ID: ${feature.id}`}
         showBackButton={true}
+        backHref={`/services/${encodeURIComponent(name)}`}
       >
         <Badge
           variant="outline"

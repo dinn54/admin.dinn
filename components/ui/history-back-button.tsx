@@ -8,16 +8,17 @@ import { useRouter } from "@bprogress/next";
 
 interface HistoryBackButtonProps {
   className?: string;
+  href?: string;
 }
 
-export function HistoryBackButton({ className }: HistoryBackButtonProps) {
+export function HistoryBackButton({ className, href }: HistoryBackButtonProps) {
   const router = useRouter();
 
   return (
     <Button
       variant="ghost"
       size="icon"
-      onClick={() => router.back()}
+      onClick={() => (href ? router.push(href) : router.back())}
       className={cn(
         "h-10 w-10 hover:bg-transparent hover:text-primary transition-colors",
         className

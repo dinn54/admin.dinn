@@ -50,6 +50,7 @@ export function ServiceManagementDashboard({
           title={serviceName}
           description={`ID: ${serviceId}`}
           showBackButton={true}
+          backHref="/services"
           actions={
             <Button variant="outline" size="sm" className="h-9 gap-2">
               <HugeiconsIcon icon={Settings02Icon} size={16} />

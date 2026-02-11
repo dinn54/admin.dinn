@@ -9,6 +9,7 @@ interface PageHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
   title: string;
   description?: React.ReactNode;
   showBackButton?: boolean;
+  backHref?: string;
   actions?: React.ReactNode;
 }
 
@@ -16,6 +17,7 @@ export function PageHeader({
   title,
   description,
   showBackButton = false,
+  backHref,
   actions,
   className,
   children,
@@ -32,7 +34,7 @@ export function PageHeader({
       <div className="flex items-start gap-4">
         {showBackButton && (
           <div className="flex items-center gap-4 pt-1">
-            <HistoryBackButton className="h-8 w-8" />
+            <HistoryBackButton className="h-8 w-8" href={backHref} />
             <Separator orientation="vertical" className="h-6 hidden md:block" />
           </div>
         )}
