@@ -1,14 +1,24 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ArrowUp, Bookmark, Calendar, Clock } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowUp,
+  Bookmark,
+  Calendar,
+  Clock,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { useRouter } from "@bprogress/next";
 import Link from "next/link";
-import { Post } from "@/app/services/[name]/[slug]/[postTitle]/page";
+import { Post } from "@/app/services/[name]/[slug]/[postSlug]/page";
 import { parseMarkdownToLexicalNodes } from "@/lib/parseMarkdownServer";
 import ServerLexicalRenderer from "@/components/editor/ui/ServerLexicalRenderer";
+import { toast } from "sonner";
+import { usePathname } from "next/navigation";
 
 interface PostDetailViewProps {
   post: Post;
@@ -22,6 +32,20 @@ export function PostDetailView({
   children,
 }: PostDetailViewProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const editPath = useMemo(() => {
+    if (!pathname) return "";
+    return pathname.endsWith("/") ? `${pathname}edit` : `${pathname}/edit`;
+  }, [pathname]);
+
+  const listPath = useMemo(() => {
+    if (!pathname) return "/services";
+    const segments = pathname.split("/").filter(Boolean);
+    if (segments.length <= 1) return "/";
+    return `/${segments.slice(0, -1).join("/")}`;
+  }, [pathname]);
 
   // 미리보기용: children이 없을 때 클라이언트에서 마크다운 파싱
   const parsedNodes = useMemo(() => {
@@ -31,6 +55,39 @@ export function PostDetailView({
 
   const handleScrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleEdit = () => {
+    if (!editPath) return;
+    router.push(editPath);
+  };
+
+  const handleDelete = async () => {
+    if (isDeleting) return;
+    const shouldDelete = window.confirm("이 게시글을 삭제하시겠습니까?");
+    if (!shouldDelete) return;
+
+    try {
+      setIsDeleting(true);
+      const response = await fetch(`/api/posts/${post.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(result?.error || "삭제에 실패했습니다.");
+      }
+
+      toast.success("게시글이 삭제되었습니다.");
+      router.push(listPath);
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "삭제에 실패했습니다.",
+      );
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleDownloadHtml = async () => {
@@ -198,7 +255,7 @@ export function PostDetailView({
       <article className="flex h-full w-full max-w-[800px] flex-col pt-2 pb-10">
         {/* Top Back Navigation */}
         {showBackButton && (
-          <div className="mb-8">
+          <div className="mb-8 flex items-center justify-between gap-3">
             <button
               onClick={() => router.back()}
               className="group flex w-fit items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-teal-600 dark:text-slate-400 dark:hover:text-teal-400"
@@ -206,6 +263,22 @@ export function PostDetailView({
               <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
               목록으로 돌아가기
             </button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={handleEdit}>
+                <Pencil className="h-3.5 w-3.5" />
+                수정
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-red-600 hover:text-red-700"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {isDeleting ? "삭제 중..." : "삭제"}
+              </Button>
+            </div>
           </div>
         )}
 
