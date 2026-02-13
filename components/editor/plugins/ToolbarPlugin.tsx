@@ -12,6 +12,8 @@ import {
   $isRangeSelection,
   $createParagraphNode,
   $getNodeByKey,
+  $isElementNode,
+  ElementFormatType,
 } from "lexical";
 import { $isLinkNode, TOGGLE_LINK_COMMAND } from "@lexical/link";
 import {
@@ -56,9 +58,12 @@ import {
   Youtube,
   Twitter,
   Plus,
+  Table,
 } from "lucide-react";
 import { Toggle } from "../../ui/toggle";
 import { Button } from "../../ui/button";
+import { Input } from "../../ui/input";
+import { Label } from "../../ui/label";
 import {
   Select,
   SelectContent,
@@ -72,10 +77,25 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../ui/dialog";
 import { InsertDialog, InsertType } from "./insert-dialog";
 import { INSERT_IMAGE_COMMAND } from "../nodes/ImageNode";
 import { INSERT_TWEET_COMMAND } from "../nodes/TweetNode";
 import { INSERT_YOUTUBE_COMMAND } from "./insert-plugin";
+import {
+  INSERT_TABLE_COMMAND,
+  $getTableCellNodeFromLexicalNode,
+  $isTableSelection,
+  $isTableNode,
+} from "@lexical/table";
+import { SET_SELECTED_TABLE_KEY_COMMAND } from "./table-block-selection";
 
 const LowPriority = 1;
 
@@ -141,10 +161,13 @@ export default function ToolbarPlugin() {
   const [isUnderline, setIsUnderline] = useState(false);
   const [isStrikethrough, setIsStrikethrough] = useState(false);
   const [isCode, setIsCode] = useState(false);
+  const [selectedTableKey, setSelectedTableKey] = useState<string | null>(null);
 
   // Insert dialog state
   const [insertDialogOpen, setInsertDialogOpen] = useState(false);
   const [insertType, setInsertType] = useState<InsertType>(null);
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
 
   const updateToolbar = useCallback(() => {
     const selection = $getSelection();
@@ -223,6 +246,17 @@ export default function ToolbarPlugin() {
 
   useEffect(() => {
     return editor.registerCommand(
+      SET_SELECTED_TABLE_KEY_COMMAND,
+      (payload) => {
+        setSelectedTableKey(payload);
+        return false;
+      },
+      LowPriority
+    );
+  }, [editor]);
+
+  useEffect(() => {
+    return editor.registerCommand(
       CAN_REDO_COMMAND,
       (payload) => {
         setCanRedo(payload);
@@ -248,7 +282,11 @@ export default function ToolbarPlugin() {
       editor.update(() => {
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
+          const wasBold = selection.hasFormat("bold");
           $setBlocksType(selection, () => $createHeadingNode(headingSize));
+          if (!wasBold) {
+            selection.formatText("bold");
+          }
         }
       });
     }
@@ -294,13 +332,109 @@ export default function ToolbarPlugin() {
     }
   };
 
-  const insertLink = useCallback(() => {
-    if (!isLink) {
-      editor.dispatchCommand(TOGGLE_LINK_COMMAND, "https://");
-    } else {
+  const formatElement = useCallback(
+    (value: ElementFormatType) => {
+      let handledTableCells = false;
+      editor.update(() => {
+        const selection = $getSelection();
+        if (!$isTableSelection(selection)) return;
+
+        const cellMap = new Map<string, ReturnType<typeof $getTableCellNodeFromLexicalNode>>();
+        const anchorCell = $getTableCellNodeFromLexicalNode(selection.anchor.getNode());
+        if (anchorCell) {
+          cellMap.set(anchorCell.getKey(), anchorCell);
+        }
+        const focusCell = $getTableCellNodeFromLexicalNode(selection.focus.getNode());
+        if (focusCell) {
+          cellMap.set(focusCell.getKey(), focusCell);
+        }
+        for (const node of selection.getNodes()) {
+          const cell = $getTableCellNodeFromLexicalNode(node);
+          if (cell) {
+            cellMap.set(cell.getKey(), cell);
+          }
+        }
+
+        if (cellMap.size === 0) return;
+        handledTableCells = true;
+        for (const maybeCell of cellMap.values()) {
+          if (!maybeCell) continue;
+          for (const child of maybeCell.getChildren()) {
+            if (
+              $isElementNode(child) &&
+              (child.getType() === "paragraph" ||
+                child.getType() === "heading" ||
+                child.getType() === "quote")
+            ) {
+              child.setFormat(value);
+            }
+          }
+        }
+      });
+
+      if (handledTableCells) return;
+
+      if (selectedTableKey) {
+        editor.update(() => {
+          const node = $getNodeByKey(selectedTableKey);
+          if ($isTableNode(node)) {
+            node.setFormat(value);
+          }
+        });
+        return;
+      }
+
+      editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, value);
+    },
+    [editor, selectedTableKey]
+  );
+
+  const normalizeLinkUrl = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    if (/^(https?:\/\/|mailto:|tel:)/i.test(trimmed)) return trimmed;
+    return `https://${trimmed}`;
+  };
+
+  const openLinkDialog = useCallback(() => {
+    editor.getEditorState().read(() => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        setLinkUrl("https://");
+        setLinkDialogOpen(true);
+        return;
+      }
+      const node = selection.anchor.getNode();
+      const parent = node.getParent();
+      if ($isLinkNode(node)) {
+        setLinkUrl(node.getURL() || "https://");
+      } else if ($isLinkNode(parent)) {
+        setLinkUrl(parent.getURL() || "https://");
+      } else {
+        setLinkUrl("https://");
+      }
+      setLinkDialogOpen(true);
+    });
+  }, [editor]);
+
+  const handleLinkToggle = useCallback(() => {
+    if (isLink) {
       editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
+      return;
     }
-  }, [editor, isLink]);
+    openLinkDialog();
+  }, [editor, isLink, openLinkDialog]);
+
+  const applyLink = useCallback(() => {
+    const normalized = normalizeLinkUrl(linkUrl);
+    if (!normalized) return;
+    editor.dispatchCommand(TOGGLE_LINK_COMMAND, {
+      url: normalized,
+      target: "_blank",
+      rel: "noopener noreferrer",
+    });
+    setLinkDialogOpen(false);
+  }, [editor, linkUrl]);
 
   const handleOpenInsertDialog = (type: InsertType) => {
     setInsertType(type);
@@ -335,11 +469,19 @@ export default function ToolbarPlugin() {
           }
         }
         break;
+      case "table":
+        editor.dispatchCommand(INSERT_TABLE_COMMAND, {
+          rows: String(data.rows || "3"),
+          columns: String(data.columns || "3"),
+          includeHeaders: data.includeHeaders ?? true,
+        });
+        break;
     }
   };
 
   return (
     <div
+      data-editor-toolbar
       className="flex flex-wrap items-center gap-1 border-b p-2 bg-background shrink-0 z-10"
       ref={toolbarRef}
     >
@@ -451,12 +593,21 @@ export default function ToolbarPlugin() {
       >
         <FileCode className="h-4 w-4" />
       </Toggle>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => handleOpenInsertDialog("table")}
+        aria-label="Insert table"
+        className="h-8 w-8"
+      >
+        <Table className="h-4 w-4" />
+      </Button>
 
       <div className="w-[1px] h-6 bg-border mx-1" />
 
       <Toggle
         pressed={isLink}
-        onPressedChange={insertLink}
+        onPressedChange={handleLinkToggle}
         aria-label="Insert Link"
         className="h-8 w-8 p-0"
       >
@@ -468,7 +619,7 @@ export default function ToolbarPlugin() {
       <Button
         variant="ghost"
         size="icon"
-        onClick={() => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, "left")}
+        onClick={() => formatElement("left")}
         className="h-8 w-8"
       >
         <AlignLeft className="h-4 w-4" />
@@ -476,7 +627,7 @@ export default function ToolbarPlugin() {
       <Button
         variant="ghost"
         size="icon"
-        onClick={() => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, "center")}
+        onClick={() => formatElement("center")}
         className="h-8 w-8"
       >
         <AlignCenter className="h-4 w-4" />
@@ -484,7 +635,7 @@ export default function ToolbarPlugin() {
       <Button
         variant="ghost"
         size="icon"
-        onClick={() => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, "right")}
+        onClick={() => formatElement("right")}
         className="h-8 w-8"
       >
         <AlignRight className="h-4 w-4" />
@@ -492,9 +643,7 @@ export default function ToolbarPlugin() {
       <Button
         variant="ghost"
         size="icon"
-        onClick={() =>
-          editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, "justify")
-        }
+        onClick={() => formatElement("justify")}
         className="h-8 w-8"
       >
         <AlignJustify className="h-4 w-4" />
@@ -531,6 +680,35 @@ export default function ToolbarPlugin() {
         type={insertType}
         onConfirm={handleInsertConfirm}
       />
+      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>링크 삽입</DialogTitle>
+            <DialogDescription>URL을 입력하면 선택한 텍스트에 링크를 적용합니다.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="link-url">URL</Label>
+            <Input
+              id="link-url"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              placeholder="https://example.com"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  applyLink();
+                }
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLinkDialogOpen(false)}>
+              취소
+            </Button>
+            <Button onClick={applyLink}>적용</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

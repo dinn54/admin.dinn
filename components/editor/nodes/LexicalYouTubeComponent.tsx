@@ -14,6 +14,7 @@ import {
   NodeKey,
 } from "lexical";
 import { $isYouTubeNode } from "./YouTubeNode";
+import { clampToContainerWidth, getResizeBoundaryWidth } from "./resizeBounds";
 
 export default function LexicalYouTubeComponent({
   className,
@@ -63,11 +64,12 @@ export default function LexicalYouTubeComponent({
 
       const startX = event.clientX;
       const startWidth = currentWidth;
+      const boundaryWidth = getResizeBoundaryWidth(containerRef.current, 800);
       let finalWidth = startWidth;
 
       const handleMouseMove = (e: MouseEvent) => {
         const deltaX = direction === "right" ? e.clientX - startX : startX - e.clientX;
-        finalWidth = Math.max(200, Math.min(800, startWidth + deltaX));
+        finalWidth = clampToContainerWidth(startWidth + deltaX, boundaryWidth, 200);
         setCurrentWidth(finalWidth);
       };
 
@@ -115,10 +117,28 @@ export default function LexicalYouTubeComponent({
 
   // Sync width from props
   React.useEffect(() => {
-    if (width !== currentWidth && !isResizing) {
-      setCurrentWidth(width);
+    if (!isResizing) {
+      const boundaryWidth = getResizeBoundaryWidth(containerRef.current, 800);
+      const clampedWidth = clampToContainerWidth(width, boundaryWidth, 200);
+      if (clampedWidth !== currentWidth) {
+        setCurrentWidth(clampedWidth);
+      }
     }
-  }, [width, isResizing]);
+  }, [width, isResizing, currentWidth]);
+
+  React.useLayoutEffect(() => {
+    if (isResizing) return;
+    const boundaryWidth = getResizeBoundaryWidth(containerRef.current, 800);
+    const clampedWidth = clampToContainerWidth(currentWidth, boundaryWidth, 200);
+    if (clampedWidth === currentWidth) return;
+    setCurrentWidth(clampedWidth);
+    editor.update(() => {
+      const node = $getNodeByKey(nodeKey);
+      if ($isYouTubeNode(node)) {
+        node.setWidth(clampedWidth);
+      }
+    });
+  }, [currentWidth, editor, isResizing, nodeKey]);
 
   return (
     <div
@@ -130,6 +150,7 @@ export default function LexicalYouTubeComponent({
         width: `${currentWidth}px`,
         maxWidth: "100%",
         padding: isEditable ? "8px" : "0",
+        boxSizing: "border-box",
       }}
     >
       {/* Click overlay - only in edit mode to catch clicks before iframe */}

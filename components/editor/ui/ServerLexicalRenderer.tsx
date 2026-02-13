@@ -52,6 +52,9 @@ export interface LexicalNode {
   language?: string;
   rows?: LexicalNode[];
   checked?: boolean;
+  headerState?: number;
+  colSpan?: number;
+  rowSpan?: number;
 }
 
 // Theme Definition - Synced with theme.ts
@@ -75,6 +78,12 @@ export const editorTheme = {
     listitem: "pl-1 leading-relaxed text-[15px]",
   },
   link: "font-medium text-teal-600 dark:text-teal-400 hover:underline decoration-2 underline-offset-4 cursor-pointer transition-colors",
+  table:
+    "w-full table-fixed text-left border-collapse border border-slate-200 dark:border-slate-800 my-4 text-[15px]",
+  tableCell:
+    "border-b border-r border-slate-200 dark:border-slate-800 px-2.5 py-1.5 align-top last:border-r-0 [overflow-wrap:anywhere] [&_.mb-6]:mb-0 [&_p]:leading-[1.6]",
+  tableCellHeader:
+    "bg-slate-50 dark:bg-slate-900/50 font-normal text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 [overflow-wrap:anywhere] [&_.mb-6]:mb-0 [&_p]:leading-[1.6]",
   text: {
     bold: "font-bold text-slate-900 dark:text-slate-100",
     italic: "italic",
@@ -137,20 +146,28 @@ export default function ServerLexicalRenderer({ nodes }: { nodes: LexicalNode[] 
   );
 }
 
-function NodeRenderer({ node }: { node: LexicalNode }) {
+function NodeRenderer({
+  node,
+  inTableCell = false,
+}: {
+  node: LexicalNode;
+  inTableCell?: boolean;
+}) {
   switch (node.type) {
     case "root":
-      return <>{renderChildren(node)}</>;
+      return <>{renderChildren(node, inTableCell)}</>;
 
     case "heading": {
       const tag = (node.tag || "h1") as keyof typeof editorTheme.heading;
       const HeadingTag = tag;
-      const headingClass = editorTheme.heading[tag] || editorTheme.heading.h1;
+      const headingClass = inTableCell
+        ? "my-0 text-sm font-semibold leading-snug text-slate-900 dark:text-slate-100"
+        : editorTheme.heading[tag] || editorTheme.heading.h1;
       const headingText = node.children?.[0]?.text || "";
 
       return (
         <HeadingTag id={headingText} className={headingClass}>
-          {renderChildren(node)}
+          {renderChildren(node, inTableCell)}
         </HeadingTag>
       );
     }
@@ -160,24 +177,35 @@ function NodeRenderer({ node }: { node: LexicalNode }) {
       const hasBlockChild = node.children?.some((child) =>
         ["image", "youtube", "tweet"].includes(child.type)
       );
+      const paragraphClass = inTableCell
+        ? "mb-0 text-[14px] leading-[1.5] text-slate-700 dark:text-slate-300"
+        : editorTheme.paragraph;
       if (hasBlockChild) {
-        return <div className={editorTheme.paragraph}>{renderChildren(node)}</div>;
+        return (
+          <div className={paragraphClass}>
+            {renderChildren(node, inTableCell)}
+          </div>
+        );
       }
-      return <p className={editorTheme.paragraph}>{renderChildren(node)}</p>;
+      return <p className={paragraphClass}>{renderChildren(node, inTableCell)}</p>;
     }
 
     case "quote":
       return (
-        <blockquote className={editorTheme.quote}>
-          {renderChildren(node)}
+        <blockquote className={inTableCell ? "my-0 border-l-2 border-slate-300 pl-3 text-sm italic text-slate-600 dark:border-slate-700 dark:text-slate-300" : editorTheme.quote}>
+          {renderChildren(node, inTableCell)}
         </blockquote>
       );
 
     case "list": {
       const isOrdered = node.tag === "ol";
       const ListTag = isOrdered ? "ol" : "ul";
-      const listClass = isOrdered ? editorTheme.list.ol : editorTheme.list.ul;
-      return <ListTag className={listClass}>{renderChildren(node)}</ListTag>;
+      const listClass = inTableCell
+        ? `${isOrdered ? "list-decimal" : "list-disc"} my-0 ml-4 text-[14px] leading-[1.5] text-slate-700 dark:text-slate-300`
+        : isOrdered
+          ? editorTheme.list.ol
+          : editorTheme.list.ul;
+      return <ListTag className={listClass}>{renderChildren(node, inTableCell)}</ListTag>;
     }
 
     case "listitem":
@@ -194,7 +222,7 @@ function NodeRenderer({ node }: { node: LexicalNode }) {
             />
           )}
           <span className={node.checked ? "text-muted-foreground line-through" : ""}>
-            {renderChildren(node)}
+            {renderChildren(node, inTableCell)}
           </span>
         </li>
       );
@@ -204,11 +232,11 @@ function NodeRenderer({ node }: { node: LexicalNode }) {
       return (
         <Link
           href={node.url || "#"}
-          target={node.target || "_self"}
-          rel={node.rel}
+          target={node.target || "_blank"}
+          rel={node.rel || "noopener noreferrer"}
           className={editorTheme.link}
         >
-          {renderChildren(node)}
+          {renderChildren(node, inTableCell)}
         </Link>
       );
 
@@ -218,7 +246,7 @@ function NodeRenderer({ node }: { node: LexicalNode }) {
       const codeContent = node.children?.[0]?.text || "";
 
       return (
-        <div className={editorTheme.code}>
+        <div className={inTableCell ? "my-0 overflow-x-auto rounded-md border border-slate-700/20 bg-zinc-900 px-3 py-2 text-gray-50" : editorTheme.code}>
           <pre className="relative">
             {node.language && (
               <div className="text-muted-foreground absolute top-0 right-0 p-1 text-xs uppercase select-none">
@@ -236,10 +264,10 @@ function NodeRenderer({ node }: { node: LexicalNode }) {
     case "image": {
       const imgWidth = typeof node.width === "number" ? node.width : 500;
       return (
-        <figure className="my-8">
+        <figure className={inTableCell ? "my-0" : "my-8"}>
           <div
             className="relative inline-block"
-            style={{ width: `${imgWidth}px`, maxWidth: "100%" }}
+            style={{ width: inTableCell ? "100%" : `${imgWidth}px`, maxWidth: "100%" }}
           >
             <Image
               src={node.src || ""}
@@ -264,8 +292,11 @@ function NodeRenderer({ node }: { node: LexicalNode }) {
       const videoWidth = typeof node.width === "number" ? node.width : 560;
       return (
         <div
-          className="youtube-wrapper relative my-4 inline-block rounded-lg bg-transparent"
-          style={{ width: `${videoWidth}px`, maxWidth: "100%" }}
+          className={`youtube-wrapper relative inline-block rounded-lg bg-transparent ${inTableCell ? "my-0" : "my-4"}`}
+          style={{
+            width: inTableCell ? "100%" : `${videoWidth}px`,
+            maxWidth: "100%",
+          }}
         >
           <div className="relative rounded-lg overflow-hidden">
             <iframe
@@ -284,18 +315,24 @@ function NodeRenderer({ node }: { node: LexicalNode }) {
     case "tweet": {
       const tweetWidth = typeof node.width === "number" ? node.width : 450;
       return (
-        <div className="my-8">
+        <div className={inTableCell ? "my-0" : "my-8"}>
           <Suspense
             fallback={
               <div
                 className="animate-pulse bg-muted rounded-lg h-48 flex items-center justify-center"
-                style={{ width: tweetWidth, maxWidth: "100%" }}
+                style={{
+                  width: inTableCell ? "100%" : tweetWidth,
+                  maxWidth: "100%",
+                }}
               >
                 <span className="text-muted-foreground">트윗 로딩 중...</span>
               </div>
             }
           >
-            <TweetEmbed id={node.tweetID || ""} width={tweetWidth} />
+            <TweetEmbed
+              id={node.tweetID || ""}
+              width={inTableCell ? 320 : tweetWidth}
+            />
           </Suspense>
         </div>
       );
@@ -306,9 +343,9 @@ function NodeRenderer({ node }: { node: LexicalNode }) {
 
     case "table":
       return (
-        <div className="border-muted my-6 overflow-x-auto rounded-lg border">
-          <table className="divide-muted min-w-full divide-y">
-            <tbody className="divide-muted bg-card divide-y">
+        <div className="my-6 overflow-x-auto rounded-lg">
+          <table className={editorTheme.table}>
+            <tbody className="bg-card divide-muted divide-y">
               {renderChildren(node)}
             </tbody>
           </table>
@@ -319,11 +356,25 @@ function NodeRenderer({ node }: { node: LexicalNode }) {
       return <tr>{renderChildren(node)}</tr>;
 
     case "tablecell":
-      return (
-        <td className="text-foreground px-6 py-4 text-sm whitespace-nowrap">
-          {renderChildren(node)}
-        </td>
-      );
+      {
+        const isHeader = typeof node.headerState === "number" && node.headerState > 0;
+        const CellTag = isHeader ? "th" : "td";
+        return (
+          <CellTag
+            className={
+              isHeader
+                ? `${editorTheme.tableCell} ${editorTheme.tableCellHeader}`
+                : editorTheme.tableCell
+            }
+            colSpan={node.colSpan}
+            rowSpan={node.rowSpan}
+          >
+            <div className="flex min-w-0 flex-col gap-2 [&>figure]:my-0 [&>div.my-8]:my-0 [&>div.my-6]:my-0 [&>div.my-4]:my-0 [&_.mb-6]:mb-0">
+              {renderChildren(node, true)}
+            </div>
+          </CellTag>
+        );
+      }
 
     case "text":
       return <TextRenderer node={node} />;
@@ -332,7 +383,7 @@ function NodeRenderer({ node }: { node: LexicalNode }) {
       return <br />;
 
     default:
-      return <>{renderChildren(node)}</>;
+      return <>{renderChildren(node, inTableCell)}</>;
   }
 }
 
@@ -356,9 +407,9 @@ function TextRenderer({ node }: { node: LexicalNode }) {
   return <Fragment>{content}</Fragment>;
 }
 
-function renderChildren(node: LexicalNode) {
+function renderChildren(node: LexicalNode, inTableCell = false) {
   return node.children?.map((child, i) => (
-    <NodeRenderer key={i} node={child} />
+    <NodeRenderer key={i} node={child} inTableCell={inTableCell} />
   ));
 }
 

@@ -64,7 +64,7 @@ export class YouTubeNode extends DecoratorNode<React.JSX.Element> {
   exportDOM(): DOMExportOutput {
     const element = document.createElement("iframe");
     element.setAttribute("data-lexical-youtube", this.__videoID);
-    element.setAttribute("width", "560");
+    element.setAttribute("width", this.__width.toString());
     element.setAttribute("height", "315");
     element.setAttribute(
       "src",
@@ -72,6 +72,8 @@ export class YouTubeNode extends DecoratorNode<React.JSX.Element> {
     );
     element.setAttribute("frameborder", "0");
     element.setAttribute("allowfullscreen", "true");
+    element.style.width = `${this.__width}px`;
+    element.style.maxWidth = "100%";
     return { element };
   }
 

@@ -15,8 +15,9 @@ import {
   ElementFormatType,
   NodeKey,
 } from "lexical";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useLayoutEffect } from "react";
 import { $isTweetNode } from "./TweetNode";
+import { clampToContainerWidth, getResizeBoundaryWidth } from "./resizeBounds";
 
 export default function TweetComponent({
   tweetID,
@@ -33,6 +34,7 @@ export default function TweetComponent({
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
   const [isResizing, setIsResizing] = useState(false);
+  const [boundaryWidth, setBoundaryWidth] = useState(550);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const isEditable = editor.isEditable();
@@ -94,6 +96,7 @@ export default function TweetComponent({
 
     const startX = event.clientX;
     const startWidth = containerRef.current?.clientWidth || 0;
+    const boundaryWidth = getResizeBoundaryWidth(containerRef.current, 550);
 
     const onMouseMove = (moveEvent: MouseEvent) => {
       const deltaX = moveEvent.clientX - startX;
@@ -103,8 +106,8 @@ export default function TweetComponent({
       let newWidth = startWidth + deltaX;
 
       // Constrain width
-      if (newWidth < 250) newWidth = 250;
-      if (newWidth > 550) newWidth = 550;
+      const maxWidth = Math.min(550, boundaryWidth);
+      newWidth = clampToContainerWidth(newWidth, maxWidth, 250);
 
       editor.update(() => {
         const node = $getNodeByKey(nodeKey);
@@ -126,6 +129,27 @@ export default function TweetComponent({
 
   // Default width if inherit: 450px as requested
   const displayWidth = width === "inherit" ? 450 : width;
+  useLayoutEffect(() => {
+    const nextBoundaryWidth = getResizeBoundaryWidth(containerRef.current, 550);
+    if (nextBoundaryWidth !== boundaryWidth) {
+      setBoundaryWidth(nextBoundaryWidth);
+    }
+    const maxWidth = Math.min(550, nextBoundaryWidth);
+    const clampedWidth = clampToContainerWidth(displayWidth, maxWidth, 250);
+    if (clampedWidth === displayWidth) return;
+    editor.update(() => {
+      const node = $getNodeByKey(nodeKey);
+      if ($isTweetNode(node)) {
+        node.setWidth(clampedWidth);
+      }
+    });
+  }, [boundaryWidth, displayWidth, editor, nodeKey]);
+
+  const boundedDisplayWidth = clampToContainerWidth(
+    displayWidth,
+    Math.min(550, boundaryWidth),
+    250
+  );
 
   return (
     <div
@@ -134,7 +158,7 @@ export default function TweetComponent({
         isSelected && isEditable ? "ring-2 ring-primary bg-primary/5" : ""
       }`}
       style={{
-        width: displayWidth,
+        width: boundedDisplayWidth,
         maxWidth: "100%",
       }}
     >

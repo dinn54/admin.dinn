@@ -7,12 +7,12 @@ export const theme = {
     "mb-6 text-[15px] leading-[1.8] text-slate-700 dark:text-slate-300 tracking-normal",
   quote: "not-prose blockquote-fancy",
   heading: {
-    h1: "font-heading scroll-m-20 text-2xl font-extrabold tracking-tight lg:text-3xl mb-4 mt-10 md:mt-12 text-slate-900 dark:text-white first:mt-0",
-    h2: "font-heading scroll-m-20 text-xl font-bold tracking-tight mb-3 mt-10 md:mt-12 text-slate-900 dark:text-white",
-    h3: "font-heading scroll-m-20 text-lg font-bold tracking-tight mb-2 mt-8 text-slate-900 dark:text-white",
-    h4: "font-heading scroll-m-20 text-base font-bold tracking-tight mb-2 mt-6 text-slate-900 dark:text-white",
-    h5: "font-heading scroll-m-20 text-sm font-bold tracking-tight mb-2 mt-6 text-slate-900 dark:text-white",
-    h6: "font-heading scroll-m-20 text-xs font-bold tracking-tight mb-2 mt-6 text-slate-900 dark:text-white",
+    h1: "font-heading scroll-m-20 text-2xl font-normal tracking-tight lg:text-3xl mb-4 mt-10 md:mt-12 text-slate-900 dark:text-white first:mt-0",
+    h2: "font-heading scroll-m-20 text-xl font-normal tracking-tight mb-3 mt-10 md:mt-12 text-slate-900 dark:text-white",
+    h3: "font-heading scroll-m-20 text-lg font-normal tracking-tight mb-2 mt-8 text-slate-900 dark:text-white",
+    h4: "font-heading scroll-m-20 text-base font-normal tracking-tight mb-2 mt-6 text-slate-900 dark:text-white",
+    h5: "font-heading scroll-m-20 text-sm font-normal tracking-tight mb-2 mt-6 text-slate-900 dark:text-white",
+    h6: "font-heading scroll-m-20 text-xs font-normal tracking-tight mb-2 mt-6 text-slate-900 dark:text-white",
   },
   list: {
     nested: {
@@ -29,11 +29,16 @@ export const theme = {
   link: "font-medium text-teal-600 dark:text-teal-400 hover:underline decoration-2 underline-offset-4 cursor-pointer transition-colors",
   // Modern: Table styles
   table:
-    "w-full text-left border-collapse border border-slate-200 dark:border-slate-800 my-4 text-[15px]",
+    "w-auto max-w-full table-auto text-left border-collapse border border-slate-200 dark:border-slate-800 my-4 text-[15px]",
   tableCell:
-    "border-b border-r border-slate-200 dark:border-slate-800 px-3 py-2 last:border-r-0",
+    "border-b border-r border-slate-200 dark:border-slate-800 px-2.5 py-1.5 align-top last:border-r-0 min-w-[80px] whitespace-normal break-words [&_.mb-6]:mb-0 [&_p]:leading-[1.6]",
   tableCellHeader:
-    "bg-slate-50 dark:bg-slate-900/50 font-semibold text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800",
+    "bg-slate-50 dark:bg-slate-900/50 font-normal text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 min-w-[80px] whitespace-normal break-words [&_.mb-6]:mb-0 [&_p]:leading-[1.6]",
+  tableCellSelected: "editor-table-cell-selected",
+  tableAlignment: {
+    center: "mx-auto",
+    right: "ml-auto mr-0",
+  },
   text: {
     bold: "font-bold text-slate-900 dark:text-slate-100",
     italic: "italic",

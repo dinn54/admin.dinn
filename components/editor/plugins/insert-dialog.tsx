@@ -26,6 +26,7 @@ export type InsertType =
   | "youtube"
   | "image"
   | "tweet"
+  | "table"
   | "poll"
   | "equation"
   | "layout"
@@ -50,6 +51,9 @@ export function InsertDialog({
     if (open) {
       // Reset data on open based on type
       switch (type) {
+        case "table":
+          setData({ rows: "3", columns: "3", includeHeaders: true });
+          break;
         case "poll":
           setData({
             question: "",
@@ -128,6 +132,45 @@ export function InsertDialog({
                 onChange={(e) => setData({ ...data, url: e.target.value })}
                 placeholder="https://x.com/username/status/..."
               />
+            </div>
+          </div>
+        );
+      case "table":
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="table-rows">행 수</Label>
+                <Input
+                  id="table-rows"
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={data.rows || "3"}
+                  onChange={(e) => setData({ ...data, rows: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="table-columns">열 수</Label>
+                <Input
+                  id="table-columns"
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={data.columns || "3"}
+                  onChange={(e) => setData({ ...data, columns: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="include-headers"
+                checked={data.includeHeaders ?? true}
+                onCheckedChange={(checked) =>
+                  setData({ ...data, includeHeaders: checked })
+                }
+              />
+              <Label htmlFor="include-headers">헤더 행 포함</Label>
             </div>
           </div>
         );
@@ -251,6 +294,7 @@ export function InsertDialog({
       case "poll": return "Insert Poll";
       case "equation": return "Insert Equation";
       case "layout": return "Insert Layout";
+      case "table": return "표 삽입";
       default: return "";
     }
   };

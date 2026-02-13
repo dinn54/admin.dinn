@@ -9,8 +9,41 @@ import type {
   SerializedLexicalNode,
 } from 'lexical';
 
-import {createCommand, DecoratorNode, $applyNodeReplacement} from 'lexical';
+import {
+  createCommand,
+  DecoratorNode,
+  $applyNodeReplacement,
+} from 'lexical';
 import * as React from 'react';
+import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+
+function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
+  const [editor] = useLexicalComposerContext();
+  const [isSelected, setSelected, clearSelection] = useLexicalNodeSelection(nodeKey);
+
+  return (
+    <div
+      className={`my-8 ${isSelected ? 'ring-2 ring-indigo-400 rounded-sm' : ''}`}
+    >
+      <div
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (event.shiftKey) {
+            setSelected(!isSelected);
+          } else {
+            clearSelection();
+            setSelected(true);
+          }
+        }}
+        className="cursor-pointer py-0.5"
+      >
+        <hr className="m-0 border-t-2 border-muted" />
+      </div>
+    </div>
+  );
+}
 
 export type SerializedHorizontalRuleNode = SerializedLexicalNode;
 
@@ -74,7 +107,7 @@ export class HorizontalRuleNode extends DecoratorNode<React.ReactElement> {
   }
 
   decorate(): React.ReactElement {
-    return <hr className="my-8 border-t-2 border-muted" />;
+    return <HorizontalRuleComponent nodeKey={this.getKey()} />;
   }
 }
 

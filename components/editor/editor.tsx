@@ -4,31 +4,40 @@ import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
 import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
+import { ClickableLinkPlugin } from "@lexical/react/LexicalClickableLinkPlugin";
 import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPlugin";
+import { TablePlugin } from "@lexical/react/LexicalTablePlugin";
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import { ListItemNode, ListNode } from "@lexical/list";
 import { CodeNode, CodeHighlightNode } from "@lexical/code";
 import { AutoLinkNode, LinkNode } from "@lexical/link";
+import { TableNode, TableCellNode, TableRowNode } from "@lexical/table";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
+import { $convertToMarkdownString } from "@lexical/markdown";
+import { LexicalEditor } from "lexical";
+import React, { useEffect } from "react";
+
 import { ImageNode } from "./nodes/ImageNode";
 import { YouTubeNode } from "./nodes/YouTubeNode";
 import { TweetNode } from "./nodes/TweetNode";
 import { HorizontalRuleNode } from "./nodes/HorizontalRuleNode";
-import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
-import { LexicalEditor } from "lexical";
-import React, { useEffect } from "react";
 import CodeHighlightPlugin from "./plugins/code-highlight-plugin";
 import { CUSTOM_TRANSFORMERS } from "./markdown-transformers";
 import ToolbarPlugin from "./plugins/ToolbarPlugin";
 import { cn } from "@/lib/utils";
 import MarkdownInitializerPlugin from "./plugins/MarkdownInitializerPlugin";
 import { InsertPlugin } from "./plugins/insert-plugin";
+import TableCellActionMenuPlugin from "./plugins/TableCellActionMenuPlugin";
+import TableCellResizerPlugin from "./plugins/TableCellResizerPlugin";
+import TableBlockSelectorPlugin from "./plugins/TableBlockSelectorPlugin";
+import { isLexicalEditorStateString } from "@/lib/content-format";
 import theme from "./theme";
 
 function Placeholder() {
   return (
-    <div className="absolute top-2 left-4 text-gray-400 overflow-hidden text-ellipsis whitespace-nowrap select-none pointer-events-none">
+    <div className="absolute top-2 left-12 overflow-hidden text-ellipsis whitespace-nowrap text-gray-400 select-none pointer-events-none">
       Enter some rich text...
     </div>
   );
@@ -53,14 +62,20 @@ const editorConfig = {
     YouTubeNode,
     TweetNode,
     HorizontalRuleNode,
+    TableNode,
+    TableCellNode,
+    TableRowNode,
   ],
 };
 
 interface EditorProps {
   readOnly?: boolean;
   initialEditorState?: string | null;
+  content?: string;
   markdown?: string;
   onInit?: (editor: LexicalEditor) => void;
+  onChange?: (value: string) => void;
+  outputFormat?: "markdown" | "json";
 }
 
 function EditorInitPlugin({
@@ -75,52 +90,45 @@ function EditorInitPlugin({
   return null;
 }
 
-import { $convertToMarkdownString, TRANSFORMERS } from "@lexical/markdown"; // Make sure to import or use CUSTOM_TRANSFORMERS correctly
-
-// ... existing imports
-
-interface EditorProps {
-  readOnly?: boolean;
-  initialEditorState?: string | null;
-  markdown?: string;
-  onInit?: (editor: LexicalEditor) => void;
-  onChange?: (markdown: string) => void;
-}
-
-// ... EditorInitPlugin
-
 export function Editor({
   readOnly = false,
   initialEditorState,
+  content,
   markdown,
   onInit,
   onChange,
+  outputFormat = "markdown",
   className,
 }: EditorProps & { className?: string }) {
+  const hasLexicalState = isLexicalEditorStateString(content);
+  const resolvedInitialEditorState =
+    initialEditorState ?? (hasLexicalState ? content : undefined);
+  const legacyMarkdown = markdown ?? (!hasLexicalState ? content || "" : "");
+
   return (
     <LexicalComposer
       initialConfig={{
         ...editorConfig,
-        editorState: initialEditorState,
+        editorState: resolvedInitialEditorState,
         editable: !readOnly,
       }}
     >
       <div
         className={cn(
-          "relative flex flex-col w-full h-full",
-          !readOnly && "rounded-lg border bg-background shadow-sm overflow-hidden",
+          "relative flex h-full w-full flex-col",
+          !readOnly && "overflow-hidden rounded-lg border bg-background shadow-sm",
           className
         )}
       >
         {!readOnly && <ToolbarPlugin />}
-        <div className="relative flex-1 min-h-0">
-          <div className="absolute inset-0 overflow-y-auto">
+        <div className="relative min-h-0 flex-1">
+          <div data-editor-scroll-area className="absolute inset-0 overflow-y-auto">
             <RichTextPlugin
               contentEditable={
                 <ContentEditable
                   className={cn(
-                    "outline-none min-h-full w-full text-left relative z-10",
-                    !readOnly ? "px-4 py-2" : "py-2"
+                    "relative z-10 min-h-full w-full text-left outline-none",
+                    !readOnly ? "pl-12 pr-4 py-2" : "py-2"
                   )}
                 />
               }
@@ -131,25 +139,34 @@ export function Editor({
           <HistoryPlugin />
           {!readOnly && <AutoFocusPlugin />}
           <ListPlugin />
+          <TablePlugin />
           <LinkPlugin />
+          <ClickableLinkPlugin newTab />
           <CodeHighlightPlugin />
           <MarkdownShortcutPlugin transformers={CUSTOM_TRANSFORMERS} />
           {!readOnly && <InsertPlugin />}
+          {!readOnly && <TableCellActionMenuPlugin />}
+          {!readOnly && <TableCellResizerPlugin />}
+          {!readOnly && <TableBlockSelectorPlugin />}
           {onChange && (
             <OnChangePlugin
               onChange={(editorState) => {
                 editorState.read(() => {
-                  const markdown =
-                    $convertToMarkdownString(CUSTOM_TRANSFORMERS);
-                  onChange(markdown);
+                  if (outputFormat === "json") {
+                    onChange(JSON.stringify(editorState.toJSON()));
+                    return;
+                  }
+                  onChange($convertToMarkdownString(CUSTOM_TRANSFORMERS));
                 });
               }}
             />
           )}
-          <MarkdownInitializerPlugin
-            markdown={markdown || ""}
-            transformers={CUSTOM_TRANSFORMERS}
-          />
+          {!resolvedInitialEditorState && (
+            <MarkdownInitializerPlugin
+              markdown={legacyMarkdown || ""}
+              transformers={CUSTOM_TRANSFORMERS}
+            />
+          )}
           {onInit && <EditorInitPlugin onInit={onInit} />}
         </div>
       </div>

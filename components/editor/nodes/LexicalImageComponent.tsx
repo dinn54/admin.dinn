@@ -14,6 +14,7 @@ import {
   NodeKey,
 } from "lexical";
 import { $isImageNode } from "./ImageNode";
+import { clampToContainerWidth, getResizeBoundaryWidth } from "./resizeBounds";
 
 const imageCache = new Set();
 
@@ -116,11 +117,12 @@ export default function LexicalImageComponent({
 
       const startX = event.clientX;
       const startWidth = currentWidth;
+      const boundaryWidth = getResizeBoundaryWidth(containerRef.current, 800);
       let finalWidth = startWidth;
 
       const handleMouseMove = (e: MouseEvent) => {
         const deltaX = direction === "right" ? e.clientX - startX : startX - e.clientX;
-        finalWidth = Math.max(100, Math.min(800, startWidth + deltaX));
+        finalWidth = clampToContainerWidth(startWidth + deltaX, boundaryWidth, 100);
         setCurrentWidth(finalWidth);
       };
 
@@ -172,10 +174,28 @@ export default function LexicalImageComponent({
 
   // Sync width from props
   React.useEffect(() => {
-    if (typeof width === "number" && width !== currentWidth && !isResizing) {
-      setCurrentWidth(width);
+    if (typeof width === "number" && !isResizing) {
+      const boundaryWidth = getResizeBoundaryWidth(containerRef.current, 800);
+      const clampedWidth = clampToContainerWidth(width, boundaryWidth, 100);
+      if (clampedWidth !== currentWidth) {
+        setCurrentWidth(clampedWidth);
+      }
     }
-  }, [width, isResizing]);
+  }, [width, isResizing, currentWidth]);
+
+  React.useLayoutEffect(() => {
+    if (isResizing) return;
+    const boundaryWidth = getResizeBoundaryWidth(containerRef.current, 800);
+    const clampedWidth = clampToContainerWidth(currentWidth, boundaryWidth, 100);
+    if (clampedWidth === currentWidth) return;
+    setCurrentWidth(clampedWidth);
+    editor.update(() => {
+      const node = $getNodeByKey(nodeKey);
+      if ($isImageNode(node)) {
+        node.setWidthAndHeight(clampedWidth, "inherit");
+      }
+    });
+  }, [currentWidth, editor, isResizing, nodeKey]);
 
   return (
     <Suspense
