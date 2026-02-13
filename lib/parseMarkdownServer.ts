@@ -36,6 +36,9 @@ export interface LexicalNode {
   language?: string;
   rows?: LexicalNode[];
   checked?: boolean;
+  headerState?: number;
+  colSpan?: number;
+  rowSpan?: number;
 }
 
 const ServerEditorNodes = [

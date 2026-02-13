@@ -1,28 +1,28 @@
-import { getTweet } from "react-tweet/api";
-import { EmbeddedTweet, TweetNotFound } from "react-tweet";
+"use client";
+
+import { Tweet } from "react-tweet";
 
 interface TweetEmbedProps {
   id: string;
   width?: number;
 }
 
-export async function TweetEmbed({ id, width = 450 }: TweetEmbedProps) {
-  try {
-    const tweet = await getTweet(id);
-
-    if (!tweet) {
-      return <TweetNotFoundFallback id={id} />;
-    }
-
-    return (
-      <div style={{ width, maxWidth: "100%" }}>
-        <EmbeddedTweet tweet={tweet} />
-      </div>
-    );
-  } catch (error) {
-    console.error("Error fetching tweet:", error);
-    return <TweetNotFoundFallback id={id} />;
-  }
+export function TweetEmbed({ id, width = 450 }: TweetEmbedProps) {
+  return (
+    <div style={{ width, maxWidth: "100%" }}>
+      <Tweet
+        id={id}
+        fallback={
+          <div className="animate-pulse rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
+            <div className="h-4 w-28 rounded bg-slate-200 dark:bg-slate-700" />
+            <div className="mt-3 h-3 w-full rounded bg-slate-200 dark:bg-slate-700" />
+            <div className="mt-2 h-3 w-2/3 rounded bg-slate-200 dark:bg-slate-700" />
+          </div>
+        }
+        onError={() => null}
+      />
+    </div>
+  );
 }
 
 function TweetNotFoundFallback({ id }: { id: string }) {

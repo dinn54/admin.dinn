@@ -162,6 +162,7 @@ export class ServerImageNode extends DecoratorNode<null> {
     const element = document.createElement("img");
     element.setAttribute("src", this.__src);
     element.setAttribute("alt", this.__altText);
+    element.setAttribute("width", this.__width.toString());
     return { element };
   }
 
@@ -257,7 +258,14 @@ export class ServerYouTubeNode extends DecoratorNode<null> {
 
   exportDOM(): DOMExportOutput {
     const element = document.createElement("iframe");
+    element.setAttribute("data-lexical-youtube", this.__videoID);
     element.setAttribute("src", `https://www.youtube.com/embed/${this.__videoID}`);
+    element.setAttribute("width", this.__width.toString());
+    element.setAttribute("height", "315");
+    element.setAttribute("frameborder", "0");
+    element.setAttribute("allowfullscreen", "true");
+    element.style.width = `${this.__width}px`;
+    element.style.maxWidth = "100%";
     return { element };
   }
 
@@ -342,8 +350,9 @@ export class ServerTweetNode extends DecoratorNode<null> {
   }
 
   exportDOM(): DOMExportOutput {
-    const element = document.createElement("blockquote");
-    element.setAttribute("class", "twitter-tweet");
+    const element = document.createElement("div");
+    element.setAttribute("data-lexical-tweet-id", this.__tweetID);
+    element.style.width = `${this.__width}px`;
     return { element };
   }
 

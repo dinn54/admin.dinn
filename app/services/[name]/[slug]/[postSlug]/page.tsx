@@ -3,14 +3,11 @@ import {
   fetchRowByColumn,
   getServiceFeatureBySlug,
   getServiceByName,
-  fetchAdjacentRows,
 } from "@/lib/data";
 import { PostDetailView } from "@/components/service/post-detail-view";
+import { HtmlContentRenderer } from "@/components/content";
+import { generateHtmlFromContent } from "@/lib/generateHtmlFromContent";
 import { estimateReadTimeMinutes } from "@/lib/utils";
-import ServerLexicalRenderer from "@/components/editor/ui/ServerLexicalRenderer";
-import { parseMarkdownToLexicalNodes } from "@/lib/parseMarkdownServer";
-
-import { LexicalNode } from "@/lib/parseMarkdownServer";
 
 export interface Post {
   id: string;
@@ -27,7 +24,6 @@ export interface Post {
     avatar: string;
   };
   content: string;
-  contentNodes?: LexicalNode[];
 }
 
 export default async function BlogPostDetailPage({
@@ -56,10 +52,9 @@ export default async function BlogPostDetailPage({
 
   if (!rawPost) return notFound();
 
-  // 서버에서 마크다운 파싱
-  const contentNodes = rawPost.content
-    ? parseMarkdownToLexicalNodes(rawPost.content)
-    : [];
+  const contentHtml = rawPost.content
+    ? generateHtmlFromContent(rawPost.content)
+    : "";
 
   const post: Post = {
     id: rawPost.id,
@@ -83,21 +78,13 @@ export default async function BlogPostDetailPage({
       avatar: rawPost.author_avatar || "",
     },
     content: rawPost.content || "",
-    contentNodes,
   };
-
-  const { prev, next } = await fetchAdjacentRows(feature.table_name, post.id);
-  const basePath = `/services/${decodedName}/${slug}`;
-
-  // Helper to cast types if needed for compatibility
-  const safePrev = prev as any;
-  const safeNext = next as any;
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center">
       <PostDetailView post={post}>
-        {contentNodes.length > 0 ? (
-          <ServerLexicalRenderer nodes={contentNodes} />
+        {contentHtml ? (
+          <HtmlContentRenderer html={contentHtml} />
         ) : (
           <div className="py-20 text-center text-slate-500">
             <p>콘텐츠를 불러올 수 없습니다.</p>
