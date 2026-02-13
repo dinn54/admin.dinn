@@ -17,6 +17,9 @@ export function AuthenticatedLayout({
 }) {
   const pathname = usePathname();
   const isLoginPage = pathname === "/login";
+  const isPostEditorPage =
+    /^\/services\/[^/]+\/[^/]+\/write$/.test(pathname) ||
+    /^\/services\/[^/]+\/[^/]+\/[^/]+\/edit$/.test(pathname);
 
   // Login page - no sidebar
   if (isLoginPage) {
@@ -33,7 +36,13 @@ export function AuthenticatedLayout({
           <Separator orientation="vertical" className="mr-2 h-4" />
           <GlobalBreadcrumb />
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 md:p-4 lg:p-6 max-w-7xl mx-auto w-full">
+        <div
+          className={
+            isPostEditorPage
+              ? "flex flex-1 flex-col gap-4 px-4 md:px-4 lg:px-6 py-2 md:py-2 lg:py-3 max-w-7xl mx-auto w-full"
+              : "flex flex-1 flex-col gap-4 p-4 md:p-4 lg:p-6 max-w-7xl mx-auto w-full"
+          }
+        >
           {children}
         </div>
       </SidebarInset>

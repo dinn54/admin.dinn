@@ -10,30 +10,34 @@ import {
   Calendar,
   Clock,
   Pencil,
+  ThumbsUp,
   Trash2,
 } from "lucide-react";
 import { useRouter } from "@bprogress/next";
 import Link from "next/link";
 import { Post } from "@/app/services/[name]/[slug]/[postSlug]/page";
-import { parseMarkdownToLexicalNodes } from "@/lib/parseMarkdownServer";
-import ServerLexicalRenderer from "@/components/editor/ui/ServerLexicalRenderer";
 import { toast } from "sonner";
 import { usePathname } from "next/navigation";
+import { generateHtmlFromContent } from "@/lib/generateHtmlFromContent";
+import { HtmlContentRenderer } from "@/components/content";
 
 interface PostDetailViewProps {
   post: Post;
   showBackButton?: boolean;
   children?: React.ReactNode;
+  articleMaxWidthClass?: string;
 }
 
 export function PostDetailView({
   post,
   showBackButton = true,
   children,
+  articleMaxWidthClass = "max-w-[800px]",
 }: PostDetailViewProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
 
   const editPath = useMemo(() => {
     if (!pathname) return "";
@@ -47,10 +51,10 @@ export function PostDetailView({
     return `/${segments.slice(0, -1).join("/")}`;
   }, [pathname]);
 
-  // 미리보기용: children이 없을 때 클라이언트에서 마크다운 파싱
-  const parsedNodes = useMemo(() => {
+  // 미리보기용: children이 없을 때 저장 콘텐츠(JSON/markdown)를 HTML로 변환
+  const contentHtml = useMemo(() => {
     if (children || !post.content) return null;
-    return parseMarkdownToLexicalNodes(post.content);
+    return generateHtmlFromContent(post.content);
   }, [children, post.content]);
 
   const handleScrollToTop = () => {
@@ -252,7 +256,7 @@ export function PostDetailView({
 
   return (
     <div className="flex w-full animate-in fade-in zoom-in-95 justify-center px-4 pt-4 pb-10 duration-300 sm:px-6 md:pb-14">
-      <article className="flex h-full w-full max-w-[800px] flex-col pt-2 pb-10">
+      <article className={`flex h-full w-full ${articleMaxWidthClass} flex-col pt-2 pb-10`}>
         {/* Top Back Navigation */}
         {showBackButton && (
           <div className="mb-8 flex items-center justify-between gap-3">
@@ -331,8 +335,8 @@ export function PostDetailView({
         <div id="post-content">
           {children ? (
             children
-          ) : parsedNodes && parsedNodes.length > 0 ? (
-            <ServerLexicalRenderer nodes={parsedNodes} />
+          ) : contentHtml ? (
+            <HtmlContentRenderer html={contentHtml} />
           ) : (
             <div className="py-20 text-center text-slate-500">
               <p>콘텐츠를 불러올 수 없습니다.</p>
@@ -340,10 +344,43 @@ export function PostDetailView({
           )}
         </div>
 
+        {/* Heart / Like Section */}
+        <div className="mt-16 flex flex-col items-center gap-2 py-4">
+          <button
+            onClick={() => setIsLiked((prev) => !prev)}
+            className={[
+              "flex h-14 w-14 items-center justify-center rounded-full transition-all duration-300 active:scale-90",
+              isLiked
+                ? "bg-[#e8f0fe]"
+                : "bg-transparent hover:bg-[#e8f0fe]/40",
+            ].join(" ")}
+          >
+            <ThumbsUp
+              className={[
+                "h-6 w-6 transition-all duration-300",
+                isLiked
+                  ? "text-[#829cf3] scale-110"
+                  : "text-slate-400",
+              ].join(" ")}
+              strokeWidth={isLiked ? 2.2 : 1.8}
+            />
+          </button>
+          <span
+            className={[
+              "text-sm font-semibold tabular-nums transition-colors duration-300",
+              isLiked
+                ? "text-[#829cf3]"
+                : "text-slate-400 dark:text-slate-500",
+            ].join(" ")}
+          >
+            {isLiked ? 1 : 0}
+          </span>
+        </div>
+
         {/* Footer Actions & Navigation Combined */}
         <div
           id="post-footer"
-          className="mt-16 border-t border-slate-200 pt-8 dark:border-slate-800"
+          className="mt-10 border-t border-slate-200 pt-8 dark:border-slate-800"
         >
           <div className="mb-10 flex flex-row items-center justify-between gap-4">
             {/* Author Profile & Updated Date */}

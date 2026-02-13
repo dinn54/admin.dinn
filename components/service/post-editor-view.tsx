@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Eye, FileText, Loader2, Settings2 } from "lucide-react";
+import { ArrowLeft, Eye, FileText, Loader2, Settings2, ThumbsUp } from "lucide-react";
 import { Editor } from "@/components/editor/editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { toast } from "sonner";
-import { preprocessMarkdown } from "@/lib/preprocessMarkdown";
+import { markdownToLexicalStateString } from "@/lib/markdownToLexicalState";
+import { isLexicalEditorStateString } from "@/lib/content-format";
 
 export interface PostData {
   id?: string;
@@ -55,6 +56,13 @@ interface PostEditorViewProps {
 
 type PostStatus = "draft" | "unlisted" | "published";
 
+function toEditorStateString(content?: string): string {
+  const rawContent = content || "";
+  return isLexicalEditorStateString(rawContent)
+    ? rawContent
+    : markdownToLexicalStateString(rawContent);
+}
+
 const STATUS_CONFIG = {
   draft: {
     label: "초안",
@@ -79,9 +87,15 @@ export default function PostEditorView({
 }: PostEditorViewProps) {
   const router = useRouter();
   const isEditMode = mode === "edit";
+  const initialEditorStateFromProps = React.useMemo(
+    () => toEditorStateString(initialData?.content),
+    [initialData?.content]
+  );
 
   /* State */
-  const [markdown, setMarkdown] = useState<string>("");
+  const [editorContent, setEditorContent] = useState<string>(
+    initialEditorStateFromProps
+  );
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [subtitle, setSubtitle] = useState("");
@@ -107,7 +121,9 @@ export default function PostEditorView({
       setSubtitle(initialData.subtitle || "");
       setTags(initialData.tags || []);
       setReadTime(initialData.readTime || 0);
-      setMarkdown(initialData.content || "");
+      const nextEditorContent = toEditorStateString(initialData.content);
+      setEditorContent(nextEditorContent);
+      setEditorKey((k) => k + 1);
       setStatus((initialData.status as PostStatus) || "draft");
       setIsHiddenOnPublish(initialData.status === "unlisted");
       if (initialData.author?.name) {
@@ -147,7 +163,7 @@ export default function PostEditorView({
           role: "Administrator",
           avatar: "",
         },
-      content: markdown,
+      content: editorContent,
     };
   };
 
@@ -171,7 +187,7 @@ export default function PostEditorView({
       title,
       slug: slug || title.toLowerCase().replace(/\s+/g, "-"),
       subtitle,
-      content: markdown,
+      content: editorContent,
       tags,
       read_time: readTime,
       author_name: author,
@@ -267,12 +283,21 @@ export default function PostEditorView({
           className="bg-muted text-muted-foreground"
         />
       </div>
+      <div className="space-y-3">
+        <Label>좋아요</Label>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted text-muted-foreground">
+          <ThumbsUp className="w-4 h-4" />
+          <span className="text-sm font-medium tabular-nums">
+            {initialData?.likes ?? 0}
+          </span>
+        </div>
+      </div>
       <Separator />
       <Button
         variant="outline"
         className="w-full"
         onClick={() => {
-          setMarkdownInput(markdown);
+          setMarkdownInput("");
           setIsMarkdownDialogOpen(true);
         }}
       >
@@ -321,7 +346,7 @@ export default function PostEditorView({
               {isSaving ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : null}
-              임시 저장
+              {isSaving ? "저장 중..." : "임시 저장"}
             </Button>
           ) : null}
           <Button
@@ -339,11 +364,11 @@ export default function PostEditorView({
         {/* Main Editor Area */}
         <div className="flex-1 flex flex-col bg-background min-h-0 overflow-hidden">
           <div className="shrink-0 bg-background z-10">
-            <div className="max-w-3xl mx-auto w-full px-6 py-3 space-y-1">
+            <div className="max-w-4xl mx-auto w-full px-6 py-3 space-y-1">
               <Label className="text-muted-foreground font-medium">제목</Label>
               <Input
                 placeholder="제목을 입력하세요"
-                className="text-3xl font-bold border-none px-0 shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/50 h-auto rounded-none bg-transparent"
+                className="text-2xl font-bold border-none px-0 shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/50 h-auto rounded-none bg-transparent"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
@@ -352,13 +377,14 @@ export default function PostEditorView({
 
           <Separator />
 
-          <div className="flex-1 relative bg-slate-50/30 dark:bg-slate-900/10 min-h-0">
+          <div className="flex-1 relative bg-background min-h-0">
             <div className="absolute inset-0">
-              <div className="max-w-3xl mx-auto w-full py-3 px-6 h-full">
+              <div className="max-w-4xl mx-auto w-full py-3 px-6 h-full">
                 <Editor
                   key={initialData?.id ? `${initialData.id}-${editorKey}` : `new-${editorKey}`}
-                  markdown={markdown}
-                  onChange={setMarkdown}
+                  content={editorContent}
+                  outputFormat="json"
+                  onChange={setEditorContent}
                   readOnly={false}
                   className="h-full bg-background"
                 />
@@ -374,7 +400,7 @@ export default function PostEditorView({
         />
 
         {/* Desktop Sidebar Metadata */}
-        <div className="hidden lg:block lg:w-[350px] shrink-0 bg-slate-50/50 dark:bg-slate-900/20 p-6 space-y-6 overflow-y-auto">
+        <div className="hidden lg:block lg:w-[350px] shrink-0 bg-background p-6 space-y-6 overflow-y-auto">
           {metadataContent}
         </div>
       </div>
@@ -413,7 +439,7 @@ export default function PostEditorView({
             </Button>
             <Button
               onClick={() => {
-                setMarkdown(preprocessMarkdown(markdownInput));
+                setEditorContent(markdownToLexicalStateString(markdownInput));
                 setEditorKey((k) => k + 1);
                 setIsMarkdownDialogOpen(false);
               }}
@@ -437,6 +463,7 @@ export default function PostEditorView({
         isPublished={status === "published"}
         isHidden={isHiddenOnPublish}
         onHiddenChange={setIsHiddenOnPublish}
+        isSaving={isSaving}
       />
     </div>
   );
