@@ -77,6 +77,9 @@ importers:
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
+      dinn-lexical:
+        specifier: git+https://github.com/dinn54/dinn-lexical.git#990128d53d249ccae0812500ff4ca87ba5f70a97
+        version: https://codeload.github.com/dinn54/dinn-lexical/tar.gz/990128d53d249ccae0812500ff4ca87ba5f70a97(@lexical/code@0.39.0)(@lexical/headless@0.39.0)(@lexical/html@0.39.0)(@lexical/link@0.39.0)(@lexical/list@0.39.0)(@lexical/markdown@0.39.0)(@lexical/react@0.39.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(yjs@13.6.28))(@lexical/rich-text@0.39.0)(@lexical/table@0.39.0)(@lexical/utils@0.39.0)(lexical@0.39.0)(linkedom@0.18.12)(prismjs@1.30.0)(react-dom@19.2.3(react@19.2.3))(react-tweet@3.3.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3)
       embla-carousel-react:
         specifier: ^8.6.0
         version: 8.6.0(react@19.2.3)
@@ -2096,6 +2099,27 @@ packages:
   diff@8.0.2:
     resolution: {integrity: sha512-sSuxWU5j5SR9QQji/o2qMvqRNYRDOcBTgsJ/DeCf4iSN4gW+gNMXM7wFIP+fdXZxoNiAnHUTGjCr+TSWXdRDKg==}
     engines: {node: '>=0.3.1'}
+
+  dinn-lexical@https://codeload.github.com/dinn54/dinn-lexical/tar.gz/990128d53d249ccae0812500ff4ca87ba5f70a97:
+    resolution: {tarball: https://codeload.github.com/dinn54/dinn-lexical/tar.gz/990128d53d249ccae0812500ff4ca87ba5f70a97}
+    version: 0.1.0
+    peerDependencies:
+      '@lexical/code': ^0.39.0
+      '@lexical/headless': ^0.39.0
+      '@lexical/html': ^0.39.0
+      '@lexical/link': ^0.39.0
+      '@lexical/list': ^0.39.0
+      '@lexical/markdown': ^0.39.0
+      '@lexical/react': ^0.39.0
+      '@lexical/rich-text': ^0.39.0
+      '@lexical/table': ^0.39.0
+      '@lexical/utils': ^0.39.0
+      lexical: ^0.39.0
+      linkedom: ^0.18.12
+      prismjs: ^1.30.0
+      react: ^19.0.0
+      react-dom: ^19.0.0
+      react-tweet: ^3.3.0
 
   doctrine@2.1.0:
     resolution: {integrity: sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw==}
@@ -6129,6 +6153,25 @@ snapshots:
   detect-node-es@1.1.0: {}
 
   diff@8.0.2: {}
+
+  dinn-lexical@https://codeload.github.com/dinn54/dinn-lexical/tar.gz/990128d53d249ccae0812500ff4ca87ba5f70a97(@lexical/code@0.39.0)(@lexical/headless@0.39.0)(@lexical/html@0.39.0)(@lexical/link@0.39.0)(@lexical/list@0.39.0)(@lexical/markdown@0.39.0)(@lexical/react@0.39.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(yjs@13.6.28))(@lexical/rich-text@0.39.0)(@lexical/table@0.39.0)(@lexical/utils@0.39.0)(lexical@0.39.0)(linkedom@0.18.12)(prismjs@1.30.0)(react-dom@19.2.3(react@19.2.3))(react-tweet@3.3.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3):
+    dependencies:
+      '@lexical/code': 0.39.0
+      '@lexical/headless': 0.39.0
+      '@lexical/html': 0.39.0
+      '@lexical/link': 0.39.0
+      '@lexical/list': 0.39.0
+      '@lexical/markdown': 0.39.0
+      '@lexical/react': 0.39.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(yjs@13.6.28)
+      '@lexical/rich-text': 0.39.0
+      '@lexical/table': 0.39.0
+      '@lexical/utils': 0.39.0
+      lexical: 0.39.0
+      linkedom: 0.18.12
+      prismjs: 1.30.0
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
+      react-tweet: 3.3.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
 
   doctrine@2.1.0:
     dependencies:

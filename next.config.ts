@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@base-ui/react", "@hugeicons/react"],
+  transpilePackages: ["@base-ui/react", "@hugeicons/react", "dinn-lexical"],
   turbopack: {
     root: __dirname,
   },

@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "../components/editor/lexical-theme.css";
+@import "dinn-lexical/styles.css";
 
 @plugin "tailwindcss-animate";
 
