@@ -27,31 +27,31 @@ function MarkdownLoader({ markdown }: { markdown: string }) {
   return null;
 }
 
-const theme = {
-  ltr: "ltr",
-  rtl: "rtl",
-  placeholder: "editor-placeholder",
-  paragraph: "editor-paragraph",
-  quote: "editor-quote blockquote-fancy",
-  heading: {
-    h1: "editor-heading-h1 text-3xl font-bold mt-4 mb-2 scroll-m-20 tracking-tight",
-    h2: "editor-heading-h2 text-2xl font-semibold mt-4 mb-2 scroll-m-20 tracking-tight",
-    h3: "editor-heading-h3 text-xl font-semibold mt-4 mb-2 scroll-m-20 tracking-tight",
-  },
-  list: {
-    ul: "editor-list-ul list-disc list-inside space-y-1 my-2",
-    ol: "editor-list-ol list-decimal list-inside space-y-1 my-2",
-  },
-  listitem: "editor-listitem",
-  link: "editor-link text-primary underline underline-offset-4 hover:no-underline",
-  text: {
-    bold: "editor-text-bold font-bold",
-    italic: "editor-text-italic italic",
-    underline: "editor-text-underline underline",
-    strikethrough: "editor-text-strikethrough line-through",
-  },
-  code: "editor-code relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold",
-};
+  const theme = {
+    ltr: "ltr",
+    rtl: "rtl",
+    placeholder: "editor-placeholder",
+    paragraph: "editor-paragraph",
+    quote: "editor-quote",
+    heading: {
+      h1: "editor-heading-h1",
+      h2: "editor-heading-h2",
+      h3: "editor-heading-h3",
+    },
+    list: {
+      ul: "editor-list-ul",
+      ol: "editor-list-ol",
+    },
+    listitem: "editor-listitem",
+    link: "editor-link",
+    text: {
+      bold: "editor-text-bold",
+      italic: "editor-text-italic",
+      underline: "editor-text-underline",
+      strikethrough: "editor-text-strikethrough",
+    },
+    code: "editor-text-code",
+  };
 
 interface LexicalMarkdownViewerProps {
   content: string;

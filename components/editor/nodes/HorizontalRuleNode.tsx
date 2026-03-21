@@ -17,6 +17,8 @@ import {
 import * as React from 'react';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import theme from "../theme";
+import { cn } from "@/lib/utils";
 
 function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
   const [editor] = useLexicalComposerContext();
@@ -24,7 +26,7 @@ function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
 
   return (
     <div
-      className={`my-8 ${isSelected ? 'ring-2 ring-indigo-400 rounded-sm' : ''}`}
+      className={cn(theme.hrBlock, isSelected && theme.hrSelected)}
     >
       <div
         onClick={(event) => {
@@ -37,9 +39,9 @@ function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
             setSelected(true);
           }
         }}
-        className="cursor-pointer py-0.5"
+        className={theme.hrInner}
       >
-        <hr className="m-0 border-t-2 border-muted" />
+        <hr className={theme.hr} />
       </div>
     </div>
   );
@@ -90,7 +92,7 @@ export class HorizontalRuleNode extends DecoratorNode<React.ReactElement> {
 
   createDOM(config: EditorConfig): HTMLElement {
     const element = document.createElement('div');
-    element.style.display = 'contents';
+    element.className = theme.decoratorContents;
     return element;
   }
 

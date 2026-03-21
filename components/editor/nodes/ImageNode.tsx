@@ -3,6 +3,7 @@ import {
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
+  ElementFormatType,
   EditorConfig,
   LexicalEditor,
   LexicalNode,
@@ -35,6 +36,7 @@ export type SerializedImageNode = Spread<
   {
     altText: string;
     caption: string;
+    format?: ElementFormatType;
     height: number;
     maxWidth: number;
     showCaption: boolean;
@@ -53,6 +55,7 @@ export class ImageNode extends DecoratorNode<React.JSX.Element> {
   __showCaption: boolean;
   __caption: string;
   __captionsEnabled: boolean;
+  __format?: ElementFormatType;
 
   static getType(): string {
     return "image";
@@ -68,12 +71,22 @@ export class ImageNode extends DecoratorNode<React.JSX.Element> {
       node.__showCaption,
       node.__caption,
       node.__captionsEnabled,
+      node.__format,
       node.__key
     );
   }
 
   static importJSON(serializedNode: SerializedImageNode): ImageNode {
-    const { altText, height, width, maxWidth, caption, src, showCaption } =
+    const {
+      altText,
+      format,
+      height,
+      width,
+      maxWidth,
+      caption,
+      src,
+      showCaption,
+    } =
       serializedNode;
     return new ImageNode(
       src,
@@ -83,6 +96,9 @@ export class ImageNode extends DecoratorNode<React.JSX.Element> {
       height,
       showCaption,
       caption
+      ,
+      undefined,
+      format
     );
   }
 
@@ -113,6 +129,7 @@ export class ImageNode extends DecoratorNode<React.JSX.Element> {
     showCaption?: boolean,
     caption?: string,
     captionsEnabled?: boolean,
+    format?: ElementFormatType,
     key?: NodeKey
   ) {
     super(key);
@@ -124,12 +141,14 @@ export class ImageNode extends DecoratorNode<React.JSX.Element> {
     this.__showCaption = showCaption || false;
     this.__caption = caption || "";
     this.__captionsEnabled = captionsEnabled || false;
+    this.__format = format;
   }
 
   exportJSON(): SerializedImageNode {
     return {
       altText: this.__altText,
       caption: this.__caption,
+      format: this.__format,
       height: this.__height === "inherit" ? 0 : this.__height,
       maxWidth: this.__maxWidth,
       showCaption: this.__showCaption,
@@ -154,12 +173,20 @@ export class ImageNode extends DecoratorNode<React.JSX.Element> {
     writable.__showCaption = showCaption;
   }
 
+  setFormat(format: ElementFormatType | undefined): void {
+    const writable = this.getWritable();
+    writable.__format = format;
+  }
+
   // View
 
   createDOM(config: EditorConfig): HTMLElement {
     const span = document.createElement("span");
     const theme = config.theme;
-    const className = theme.image;
+    const className = [theme.decoratorContents, theme.imageDecoratorContents]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
     if (className !== undefined) {
       span.className = className;
     }
@@ -168,6 +195,10 @@ export class ImageNode extends DecoratorNode<React.JSX.Element> {
 
   updateDOM(): false {
     return false;
+  }
+
+  isInline(): boolean {
+    return true;
   }
 
   getSrc(): string {
@@ -187,6 +218,7 @@ export class ImageNode extends DecoratorNode<React.JSX.Element> {
         height={this.__height}
         maxWidth={this.__maxWidth}
         nodeKey={this.getKey()}
+        format={this.__format || null}
         showCaption={this.__showCaption}
         caption={this.__caption}
         captionsEnabled={this.__captionsEnabled}
@@ -215,6 +247,7 @@ export function $createImageNode({
     showCaption,
     caption,
     captionsEnabled,
+    undefined,
     key
   );
 }

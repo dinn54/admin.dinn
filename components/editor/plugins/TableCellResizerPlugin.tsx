@@ -8,6 +8,7 @@ import { useEffect, useRef } from "react";
 const EDGE_HIT_AREA_PX = 8;
 const MIN_CELL_WIDTH_PX = 80;
 const MIN_ROW_HEIGHT_PX = 36;
+export const TABLE_CELL_RESIZE_STATE_EVENT = "table-cell-resize-state";
 
 function getClosestCellElement(
   target: EventTarget | null,
@@ -33,6 +34,14 @@ export default function TableCellResizerPlugin() {
   useEffect(() => {
     const root = editor.getRootElement();
     if (!root) return;
+
+    const emitResizeState = (isResizing: boolean) => {
+      window.dispatchEvent(
+        new CustomEvent(TABLE_CELL_RESIZE_STATE_EVENT, {
+          detail: { isResizing },
+        })
+      );
+    };
 
     const resetCursor = () => {
       root.style.cursor = "";
@@ -108,6 +117,7 @@ export default function TableCellResizerPlugin() {
         root.style.cursor = "col-resize";
       }
       document.body.style.userSelect = "none";
+      emitResizeState(true);
     };
 
     const handleMouseUp = () => {
@@ -149,6 +159,7 @@ export default function TableCellResizerPlugin() {
       activeRowRef.current = null;
       document.body.style.userSelect = "";
       resetCursor();
+      emitResizeState(false);
     };
 
     root.addEventListener("mousemove", handleMouseMove);
@@ -163,6 +174,7 @@ export default function TableCellResizerPlugin() {
       root.removeEventListener("mouseleave", resetCursor);
       document.body.style.userSelect = "";
       resetCursor();
+      emitResizeState(false);
     };
   }, [editor]);
 

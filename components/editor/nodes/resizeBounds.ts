@@ -1,6 +1,6 @@
 "use client";
 
-const PRIORITY_BOUNDARY_SELECTOR = "td,th,li,blockquote,p,pre,figure";
+const PRIORITY_BOUNDARY_SELECTOR = "td,th,li,blockquote,p,pre";
 
 function getContentBoxWidth(element: HTMLElement): number {
   const style = window.getComputedStyle(element);

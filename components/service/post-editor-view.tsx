@@ -96,6 +96,9 @@ export default function PostEditorView({
   const [editorContent, setEditorContent] = useState<string>(
     initialEditorStateFromProps
   );
+  const [editorInitialState, setEditorInitialState] = useState<string>(
+    initialEditorStateFromProps
+  );
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [subtitle, setSubtitle] = useState("");
@@ -123,6 +126,7 @@ export default function PostEditorView({
       setReadTime(initialData.readTime || 0);
       const nextEditorContent = toEditorStateString(initialData.content);
       setEditorContent(nextEditorContent);
+      setEditorInitialState(nextEditorContent);
       setEditorKey((k) => k + 1);
       setStatus((initialData.status as PostStatus) || "draft");
       setIsHiddenOnPublish(initialData.status === "unlisted");
@@ -382,7 +386,7 @@ export default function PostEditorView({
               <div className="max-w-4xl mx-auto w-full py-3 px-6 h-full">
                 <Editor
                   key={initialData?.id ? `${initialData.id}-${editorKey}` : `new-${editorKey}`}
-                  content={editorContent}
+                  initialEditorState={editorInitialState}
                   outputFormat="json"
                   onChange={setEditorContent}
                   readOnly={false}
@@ -439,7 +443,9 @@ export default function PostEditorView({
             </Button>
             <Button
               onClick={() => {
-                setEditorContent(markdownToLexicalStateString(markdownInput));
+                const nextEditorState = markdownToLexicalStateString(markdownInput);
+                setEditorContent(nextEditorState);
+                setEditorInitialState(nextEditorState);
                 setEditorKey((k) => k + 1);
                 setIsMarkdownDialogOpen(false);
               }}

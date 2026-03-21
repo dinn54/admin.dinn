@@ -2,11 +2,12 @@ import { createHeadlessEditor } from "@lexical/headless";
 import { $generateHtmlFromNodes } from "@lexical/html";
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import { ListItemNode, ListNode } from "@lexical/list";
-import { CodeNode, CodeHighlightNode } from "@lexical/code";
+import { CodeNode, CodeHighlightNode, registerCodeHighlighting } from "@lexical/code";
 import { AutoLinkNode, LinkNode } from "@lexical/link";
 import { TableNode, TableCellNode, TableRowNode } from "@lexical/table";
 import { parseHTML } from "linkedom";
 import theme from "@/components/editor/theme";
+import { setupPrism } from "@/components/editor/setupPrism";
 
 import {
   ServerImageNode,
@@ -16,6 +17,7 @@ import {
 } from "./serverNodes";
 import { isLexicalEditorStateString } from "./content-format";
 import { generateHtmlFromMarkdown } from "./generateHtmlFromMarkdown";
+import { normalizeGeneratedLexicalHtml } from "./normalizeGeneratedLexicalHtml";
 
 const ServerEditorNodes = [
   HeadingNode,
@@ -51,6 +53,8 @@ function setGlobalDom(key: "window" | "document", value: unknown): void {
 }
 
 function generateHtmlFromLexicalState(editorStateString: string): string {
+  setupPrism();
+
   const editor = createHeadlessEditor({
     theme,
     nodes: ServerEditorNodes,
@@ -58,6 +62,7 @@ function generateHtmlFromLexicalState(editorStateString: string): string {
       console.error("[generateHtmlFromContent] Lexical error:", error);
     },
   });
+  const unregisterCodeHighlighting = registerCodeHighlighting(editor);
 
   const parsedState = editor.parseEditorState(editorStateString);
   editor.setEditorState(parsedState);
@@ -69,7 +74,9 @@ function generateHtmlFromLexicalState(editorStateString: string): string {
     },
     { discrete: true }
   );
-  return html;
+  unregisterCodeHighlighting();
+
+  return normalizeGeneratedLexicalHtml(html);
 }
 
 export function generateHtmlFromContent(content: string): string {

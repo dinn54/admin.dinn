@@ -18,7 +18,13 @@ const nextConfig: NextConfig = {
         hostname: "mowzqxruruhcvjgpzzdb.supabase.co",
         port: "",
         pathname: "/storage/v1/object/public/dinn_dev/**",
-      }
+      },
+      {
+        protocol: "https",
+        hostname: "octodex.github.com",
+        port: "",
+        pathname: "/images/**",
+      },
     ],
   },
 };

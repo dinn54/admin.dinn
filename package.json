@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:e2e": "playwright test",
     "gen:types": "supabase gen types typescript --project-id mowzqxruruhcvjgpzzdb > lib/database.types.ts"
   },
   "dependencies": {
@@ -63,6 +64,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@playwright/test": "^1.51.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

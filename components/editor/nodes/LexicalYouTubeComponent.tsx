@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useCallback, useRef } from "react";
+import React, { memo, useState, useCallback, useRef } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { useLexicalNodeSelection } from "@lexical/react/useLexicalNodeSelection";
 import { mergeRegister } from "@lexical/utils";
@@ -15,8 +15,30 @@ import {
 } from "lexical";
 import { $isYouTubeNode } from "./YouTubeNode";
 import { clampToContainerWidth, getResizeBoundaryWidth } from "./resizeBounds";
+import theme from "../theme";
+import { AlignableBlock, MediaFrame, ResizableBlock } from "../ui/media-blocks";
 
-export default function LexicalYouTubeComponent({
+const YouTubeFrame = memo(function YouTubeFrame({
+  videoID,
+  isEditable,
+}: {
+  videoID: string;
+  isEditable: boolean;
+}) {
+  return (
+    <iframe
+      src={`https://www.youtube.com/embed/${videoID}`}
+      frameBorder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowFullScreen={true}
+      title="YouTube video player"
+      className={theme.media.aspectVideo}
+      style={{ pointerEvents: isEditable ? "none" : "auto" }}
+    />
+  );
+});
+
+function LexicalYouTubeComponent({
   className,
   format,
   nodeKey,
@@ -141,76 +163,55 @@ export default function LexicalYouTubeComponent({
   }, [currentWidth, editor, isResizing, nodeKey]);
 
   return (
-    <div
-      ref={containerRef}
-      className={`youtube-wrapper relative my-4 inline-block rounded-lg bg-transparent ${
-        isSelected && isEditable ? "ring-2 ring-indigo-500" : ""
-      }`}
-      style={{
-        width: `${currentWidth}px`,
-        maxWidth: "100%",
-        padding: isEditable ? "8px" : "0",
-        boxSizing: "border-box",
-      }}
-    >
-      {/* Click overlay - only in edit mode to catch clicks before iframe */}
-      {isEditable && (
-        <div
-          className="absolute inset-0 z-10 cursor-pointer"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            clearSelection();
-            setSelected(true);
-          }}
-          onDoubleClick={(e) => {
-            e.stopPropagation();
-            setSelected(false);
-          }}
-        />
-      )}
-      {/* Visual border indicator for clickable area - only in edit mode */}
-      {isEditable && (
-        <div
-          className={`absolute inset-0 rounded-lg border-2 border-dashed transition-colors pointer-events-none ${
-            isSelected ? "border-indigo-400" : "border-transparent hover:border-slate-300"
-          }`}
-        />
-      )}
-      <div className="relative rounded-lg overflow-hidden">
-        <iframe
-          src={`https://www.youtube.com/embed/${videoID}`}
-          frameBorder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen={true}
-          title="YouTube video player"
-          className="w-full aspect-video"
-          style={{ pointerEvents: isEditable ? "none" : "auto" }}
-        />
-      </div>
-      {/* Resize Handles - only show when selected and editable */}
-      {isSelected && isEditable && (
-        <>
+    <AlignableBlock format={format as any}>
+      <ResizableBlock
+        ref={containerRef}
+        className={`${theme.media.youtube} ${theme.embedBlock.base}`}
+        isSelected={isSelected && isEditable}
+        style={{
+          width: `${currentWidth}px`,
+          maxWidth: "100%",
+          padding: "0",
+          boxSizing: "border-box",
+        }}
+      >
+        {isEditable && (
           <div
-            className="resize-handle absolute left-0 top-0 bottom-0 w-4 cursor-ew-resize flex items-center justify-center hover:bg-indigo-500/20 transition-colors z-20"
-            onMouseDown={(e) => handleResizeStart(e, "left")}
-          >
-            <div className="w-1 h-10 bg-indigo-500 rounded-full opacity-80" />
-          </div>
-          <div
-            className="resize-handle absolute right-0 top-0 bottom-0 w-4 cursor-ew-resize flex items-center justify-center hover:bg-indigo-500/20 transition-colors z-20"
-            onMouseDown={(e) => handleResizeStart(e, "right")}
-          >
-            <div className="w-1 h-10 bg-indigo-500 rounded-full opacity-80" />
-          </div>
-        </>
-      )}
-      {/* Hint text when not selected - only in edit mode */}
-      {!isSelected && isEditable && (
-        <div className="absolute bottom-2 right-2 text-xs text-slate-400 bg-white/80 px-2 py-1 rounded z-20 pointer-events-none">
-          클릭하여 선택
-        </div>
-      )}
-    </div>
+            className={theme.media.overlay}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              clearSelection();
+              setSelected(true);
+            }}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              setSelected(false);
+            }}
+          />
+        )}
+        <MediaFrame className={theme.media.frame}>
+          <YouTubeFrame videoID={videoID} isEditable={isEditable} />
+        </MediaFrame>
+        {isSelected && isEditable && (
+          <>
+            <div
+              className={`resize-handle ${theme.resizable.handle} ${theme.resizable.handleLeft}`}
+              onMouseDown={(e) => handleResizeStart(e, "left")}
+            >
+              <div className={theme.resizable.handleBar} />
+            </div>
+            <div
+              className={`resize-handle ${theme.resizable.handle} ${theme.resizable.handleRight}`}
+              onMouseDown={(e) => handleResizeStart(e, "right")}
+            >
+              <div className={theme.resizable.handleBar} />
+            </div>
+          </>
+        )}
+      </ResizableBlock>
+    </AlignableBlock>
   );
 }
+
+export default memo(LexicalYouTubeComponent);

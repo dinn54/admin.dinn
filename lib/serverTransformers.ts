@@ -36,6 +36,8 @@ import {
   ServerHorizontalRuleNode,
 } from "./serverNodes";
 
+const OPTIONAL_IMAGE_TITLE = String.raw`(?:\s+"[^"]*")?`;
+
 const TABLE_ROW_REGEXP = /^\|(.+)\|\s?$/;
 const TABLE_DIVIDER_REGEXP = /^\|\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s?$/;
 
@@ -94,8 +96,12 @@ export const SERVER_IMAGE: Transformer = {
     const widthStr = typeof width === "number" ? ` =${width}x` : "";
     return `![${node.getAltText()}](${node.getSrc()}${widthStr})`;
   },
-  importRegExp: /!\[([^[]*)\]\(([^)\s]+)(?:\s*=(\d+)x)?\)/,
-  regExp: /!\[([^[]*)\]\(([^)\s]+)(?:\s*=(\d+)x)?\)$/,
+  importRegExp: new RegExp(
+    String.raw`!\[([^[]*)\]\(([^)\s]+)(?:\s*=(\d+)x)?${OPTIONAL_IMAGE_TITLE}\)`,
+  ),
+  regExp: new RegExp(
+    String.raw`!\[([^[]*)\]\(([^)\s]+)(?:\s*=(\d+)x)?${OPTIONAL_IMAGE_TITLE}\)$`,
+  ),
   replace: (textNode, match) => {
     const [, altText, src, widthStr] = match;
     const width = widthStr ? parseInt(widthStr, 10) : 500;

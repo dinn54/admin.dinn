@@ -9,6 +9,7 @@ import {
   FORMAT_TEXT_COMMAND,
   FORMAT_ELEMENT_COMMAND,
   $getSelection,
+  $isNodeSelection,
   $isRangeSelection,
   $createParagraphNode,
   $getNodeByKey,
@@ -86,8 +87,9 @@ import {
   DialogTitle,
 } from "../../ui/dialog";
 import { InsertDialog, InsertType } from "./insert-dialog";
-import { INSERT_IMAGE_COMMAND } from "../nodes/ImageNode";
-import { INSERT_TWEET_COMMAND } from "../nodes/TweetNode";
+import { INSERT_IMAGE_COMMAND, $isImageNode } from "../nodes/ImageNode";
+import { INSERT_TWEET_COMMAND, $isTweetNode } from "../nodes/TweetNode";
+import { $isYouTubeNode } from "../nodes/YouTubeNode";
 import { INSERT_YOUTUBE_COMMAND } from "./insert-plugin";
 import {
   INSERT_TABLE_COMMAND,
@@ -373,6 +375,21 @@ export default function ToolbarPlugin() {
       });
 
       if (handledTableCells) return;
+
+      let handledDecoratorNodes = false;
+      editor.update(() => {
+        const selection = $getSelection();
+        if (!$isNodeSelection(selection)) return;
+
+        for (const node of selection.getNodes()) {
+          if ($isImageNode(node) || $isYouTubeNode(node) || $isTweetNode(node)) {
+            node.setFormat(value);
+            handledDecoratorNodes = true;
+          }
+        }
+      });
+
+      if (handledDecoratorNodes) return;
 
       if (selectedTableKey) {
         editor.update(() => {

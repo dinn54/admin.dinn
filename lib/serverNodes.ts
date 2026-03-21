@@ -13,6 +13,7 @@ import {
   SerializedLexicalNode,
   Spread,
 } from "lexical";
+import theme from "@/components/editor/theme";
 
 // ========== Horizontal Rule Node (서버용) ==========
 export type SerializedServerHorizontalRuleNode = SerializedLexicalNode;
@@ -147,7 +148,7 @@ export class ServerImageNode extends DecoratorNode<null> {
   }
 
   createDOM(): HTMLElement {
-    return document.createElement("div");
+    return document.createElement("span");
   }
 
   updateDOM(): false {
@@ -159,15 +160,39 @@ export class ServerImageNode extends DecoratorNode<null> {
   }
 
   exportDOM(): DOMExportOutput {
+    const wrapper = document.createElement("span");
+    wrapper.className = theme.image;
+
+    const resizable = document.createElement("span");
+    resizable.className = theme.resizable.node;
+    resizable.style.width = `${this.__width}px`;
+    resizable.style.maxWidth = "100%";
+
+    const frame = document.createElement("span");
+    frame.className = theme.media.frame;
+
     const element = document.createElement("img");
+    element.className = theme.media.image;
     element.setAttribute("src", this.__src);
     element.setAttribute("alt", this.__altText);
     element.setAttribute("width", this.__width.toString());
-    return { element };
+    element.style.width = "100%";
+    element.style.height = "auto";
+    element.style.maxWidth = "100%";
+
+    frame.appendChild(element);
+    resizable.appendChild(frame);
+    wrapper.appendChild(resizable);
+
+    return { element: wrapper };
   }
 
   decorate(): null {
     return null;
+  }
+
+  isInline(): boolean {
+    return true;
   }
 
   getSrc(): string {
@@ -257,16 +282,29 @@ export class ServerYouTubeNode extends DecoratorNode<null> {
   }
 
   exportDOM(): DOMExportOutput {
+    const wrapper = document.createElement("div");
+    wrapper.className = `${theme.resizable.node} ${theme.embedBlock.base} ${theme.media.youtube}`.trim();
+    wrapper.style.width = `min(100%, ${this.__width}px)`;
+    wrapper.style.maxWidth = "100%";
+
+    const frame = document.createElement("div");
+    frame.className = theme.media.frame;
+
     const element = document.createElement("iframe");
+    element.className = theme.media.aspectVideo;
     element.setAttribute("data-lexical-youtube", this.__videoID);
     element.setAttribute("src", `https://www.youtube.com/embed/${this.__videoID}`);
-    element.setAttribute("width", this.__width.toString());
-    element.setAttribute("height", "315");
     element.setAttribute("frameborder", "0");
     element.setAttribute("allowfullscreen", "true");
-    element.style.width = `${this.__width}px`;
-    element.style.maxWidth = "100%";
-    return { element };
+    element.setAttribute(
+      "allow",
+      "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    );
+    element.setAttribute("title", "YouTube video player");
+
+    frame.appendChild(element);
+    wrapper.appendChild(frame);
+    return { element: wrapper };
   }
 
   decorate(): null {
@@ -350,10 +388,45 @@ export class ServerTweetNode extends DecoratorNode<null> {
   }
 
   exportDOM(): DOMExportOutput {
+    const wrapper = document.createElement("div");
+    wrapper.className = `${theme.resizable.node} ${theme.embedBlock.base} ${theme.media.tweet}`.trim();
+    wrapper.style.width = `min(100%, ${this.__width}px)`;
+    wrapper.style.maxWidth = "100%";
+
+    const frame = document.createElement("div");
+    frame.className = theme.media.frame;
+
     const element = document.createElement("div");
     element.setAttribute("data-lexical-tweet-id", this.__tweetID);
-    element.style.width = `${this.__width}px`;
-    return { element };
+    element.className = theme.media.tweetPlaceholder;
+    element.style.width = `min(100%, ${this.__width}px)`;
+
+    const body = document.createElement("div");
+    body.className = theme.media.tweetPlaceholderBody;
+
+    const eyebrow = document.createElement("div");
+    eyebrow.className = theme.media.tweetPlaceholderEyebrow;
+    eyebrow.textContent = "X Post";
+
+    const label = document.createElement("span");
+    label.className = theme.media.tweetPlaceholderText;
+    label.textContent = `Post ${this.__tweetID}`;
+
+    const link = document.createElement("a");
+    link.className = theme.media.tweetPlaceholderLink;
+    link.href = `https://x.com/i/status/${this.__tweetID}`;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "Open on X";
+
+    body.appendChild(eyebrow);
+    body.appendChild(label);
+    body.appendChild(link);
+    element.appendChild(body);
+
+    frame.appendChild(element);
+    wrapper.appendChild(frame);
+    return { element: wrapper };
   }
 
   decorate(): null {

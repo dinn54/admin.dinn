@@ -11,6 +11,14 @@ import CodeHighlightPlugin from "../plugins/code-highlight-plugin";
 import MarkdownInitializerPlugin from "../plugins/MarkdownInitializerPlugin";
 import { CUSTOM_TRANSFORMERS } from "../markdown-transformers";
 import OpenLinksInNewTabPlugin from "../plugins/OpenLinksInNewTabPlugin";
+import NormalizeMediaParagraphPlugin from "../plugins/NormalizeMediaParagraphPlugin";
+import NormalizeTableColumnWidthsPlugin from "../plugins/NormalizeTableColumnWidthsPlugin";
+import {
+  readOnlyRenderContentClassName,
+  readOnlyRenderFrameClassName,
+  readOnlyRenderRootClassName,
+  readOnlyRenderScrollAreaClassName,
+} from "../readOnlyRenderShell";
 
 interface LexicalRendererProps {
   markdown: string;
@@ -126,21 +134,27 @@ export default function LexicalRenderer({ markdown }: LexicalRendererProps) {
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
-      <div className="editor-container relative z-0 flex h-full w-full flex-col">
-        <div className="editor-inner relative h-full w-full grow">
-          <RichTextPlugin
-            contentEditable={
-              <ContentEditable className="editor-input h-full w-full resize-none p-4 focus:outline-none" />
-            }
-            placeholder={null}
-            ErrorBoundary={LexicalErrorBoundary}
-          />
-          <CodeHighlightPlugin />
-          <OpenLinksInNewTabPlugin />
-          <MarkdownInitializerPlugin
-            markdown={formattedMarkdown}
-            transformers={CUSTOM_TRANSFORMERS}
-          />
+      <div className={readOnlyRenderRootClassName}>
+        <div className={readOnlyRenderFrameClassName}>
+          <div className={readOnlyRenderScrollAreaClassName}>
+            <RichTextPlugin
+              contentEditable={
+                <ContentEditable
+                  className={`${readOnlyRenderContentClassName} h-full resize-none`}
+                />
+              }
+              placeholder={null}
+              ErrorBoundary={LexicalErrorBoundary}
+            />
+            <CodeHighlightPlugin />
+            <NormalizeMediaParagraphPlugin />
+            <NormalizeTableColumnWidthsPlugin />
+            <OpenLinksInNewTabPlugin />
+            <MarkdownInitializerPlugin
+              markdown={formattedMarkdown}
+              transformers={CUSTOM_TRANSFORMERS}
+            />
+          </div>
         </div>
       </div>
     </LexicalComposer>

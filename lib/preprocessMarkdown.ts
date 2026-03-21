@@ -67,5 +67,47 @@ export function preprocessMarkdown(markdown: string): string {
     finalStr = finalStr.slice(0, start) + replacement + finalStr.slice(end);
   }
 
-  return finalStr;
+  return expandReferenceStyleImages(finalStr);
+}
+
+function expandReferenceStyleImages(markdown: string): string {
+  const referenceDefinitions = new Map<string, { url: string; title?: string }>();
+  const referenceDefinitionRegex =
+    /^\[([^\]\^]+)\]:\s+(\S+?)(?:\s+(?:"([^"]*)"|'([^']*)'|\(([^)]+)\)))?\s*$/gm;
+
+  let definitionMatch: RegExpExecArray | null;
+  while ((definitionMatch = referenceDefinitionRegex.exec(markdown)) !== null) {
+    const [, rawId, url, doubleQuotedTitle, singleQuotedTitle, parenthesizedTitle] =
+      definitionMatch;
+    referenceDefinitions.set(rawId.trim().toLowerCase(), {
+      url,
+      title: doubleQuotedTitle || singleQuotedTitle || parenthesizedTitle || undefined,
+    });
+  }
+
+  if (referenceDefinitions.size === 0) {
+    return markdown;
+  }
+
+  const usedReferenceIds = new Set<string>();
+  const expanded = markdown.replace(/!\[([^\]]*)\]\[([^\]]+)\]/g, (fullMatch, alt, rawId) => {
+    const normalizedId = String(rawId).trim().toLowerCase();
+    const definition = referenceDefinitions.get(normalizedId);
+    if (!definition) {
+      return fullMatch;
+    }
+
+    usedReferenceIds.add(normalizedId);
+    const titleSuffix = definition.title ? ` "${definition.title}"` : "";
+    return `![${alt}](${definition.url}${titleSuffix})`;
+  });
+
+  if (usedReferenceIds.size === 0) {
+    return expanded;
+  }
+
+  return expanded.replace(referenceDefinitionRegex, (fullMatch, rawId) => {
+    const normalizedId = String(rawId).trim().toLowerCase();
+    return usedReferenceIds.has(normalizedId) ? "" : fullMatch;
+  });
 }

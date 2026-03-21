@@ -3,6 +3,7 @@ import {
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
+  ElementFormatType,
   EditorConfig,
   LexicalEditor,
   LexicalNode,
@@ -16,7 +17,7 @@ import LexicalYouTubeComponent from "./LexicalYouTubeComponent";
 export type SerializedYouTubeNode = Spread<
   {
     videoID: string;
-    format?: string;
+    format?: ElementFormatType;
     width?: number;
   },
   SerializedLexicalNode
@@ -24,7 +25,7 @@ export type SerializedYouTubeNode = Spread<
 
 export class YouTubeNode extends DecoratorNode<React.JSX.Element> {
   __videoID: string;
-  __format?: string;
+  __format?: ElementFormatType;
   __width: number;
 
   static getType(): string {
@@ -54,7 +55,12 @@ export class YouTubeNode extends DecoratorNode<React.JSX.Element> {
     };
   }
 
-  constructor(videoID: string, format?: string, width?: number, key?: NodeKey) {
+  constructor(
+    videoID: string,
+    format?: ElementFormatType,
+    width?: number,
+    key?: NodeKey
+  ) {
     super(key);
     this.__videoID = videoID;
     this.__format = format;
@@ -106,7 +112,7 @@ export class YouTubeNode extends DecoratorNode<React.JSX.Element> {
     return `https://www.youtube.com/watch?v=${this.__videoID}`;
   }
 
-  setFormat(format: string | undefined): void {
+  setFormat(format: ElementFormatType | undefined): void {
     const writable = this.getWritable();
     writable.__format = format;
   }
@@ -123,8 +129,8 @@ export class YouTubeNode extends DecoratorNode<React.JSX.Element> {
   createDOM(config: EditorConfig): HTMLElement {
     const div = document.createElement("div");
     const theme = config.theme;
-    const className = theme.embedBlock || "editor-embed-block";
-    div.className = className as string;
+    const className = theme.embedBlock?.base || "editor-embed-block";
+    div.className = className;
     return div;
   }
 

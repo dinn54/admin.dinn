@@ -18,6 +18,8 @@ import {
 import { useState, useRef, useEffect, useCallback, useLayoutEffect } from "react";
 import { $isTweetNode } from "./TweetNode";
 import { clampToContainerWidth, getResizeBoundaryWidth } from "./resizeBounds";
+import theme from "../theme";
+import { AlignableBlock, MediaFrame, ResizableBlock } from "../ui/media-blocks";
 
 export default function TweetComponent({
   tweetID,
@@ -152,25 +154,30 @@ export default function TweetComponent({
   );
 
   return (
-    <div
-      ref={containerRef}
-      className={`relative group ${
-        isSelected && isEditable ? "ring-2 ring-primary bg-primary/5" : ""
-      }`}
-      style={{
-        width: boundedDisplayWidth,
-        maxWidth: "100%",
-      }}
-    >
-      {/* @ts-ignore */}
-      <Tweet id={tweetID} />
+    <AlignableBlock format={format}>
+      <ResizableBlock
+        ref={containerRef}
+        className={`${theme.embedBlock.base} ${theme.media.tweet} group`}
+        isSelected={isSelected && isEditable}
+        style={{
+          width: boundedDisplayWidth,
+          maxWidth: "100%",
+        }}
+      >
+        <MediaFrame>
+          {/* @ts-ignore */}
+          <Tweet id={tweetID} />
+        </MediaFrame>
 
-      {isSelected && isEditable && (
-        <div
-          className="absolute right-0 top-0 h-full w-1.5 cursor-ew-resize hover:bg-primary/50 bg-transparent transition-colors z-10"
-          onMouseDown={onResizeStart}
-        />
-      )}
-    </div>
+        {isSelected && isEditable && (
+          <div
+            className={`${theme.resizable.handle} ${theme.resizable.handleRight}`}
+            onMouseDown={onResizeStart}
+          >
+            <div className={theme.resizable.handleBar} />
+          </div>
+        )}
+      </ResizableBlock>
+    </AlignableBlock>
   );
 }

@@ -24,6 +24,7 @@ import {
 } from "@lexical/table";
 import { Settings2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +33,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { TABLE_CELL_RESIZE_STATE_EVENT } from "./TableCellResizerPlugin";
 
 type ActiveCellState = {
   keys: string[];
@@ -81,16 +83,43 @@ function getSelectedTableCellsFromSelection(): TableCellNode[] {
 export default function TableCellActionMenuPlugin() {
   const [editor] = useLexicalComposerContext();
   const [activeCell, setActiveCell] = useState<ActiveCellState | null>(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const [overlayElement, setOverlayElement] = useState<HTMLElement | null>(null);
+  const [overlayRect, setOverlayRect] = useState<DOMRect | null>(null);
   const colorInputRef = useRef<HTMLInputElement | null>(null);
   const activeCellRef = useRef<ActiveCellState | null>(null);
   const rafRef = useRef<number | null>(null);
   const isColorPickingRef = useRef(false);
   const colorApplyRafRef = useRef<number | null>(null);
   const pendingColorRef = useRef<string | null>(null);
+  const scrollTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     activeCellRef.current = activeCell;
   }, [activeCell]);
+
+  useEffect(() => {
+    const resolveOverlayRect = () => {
+      const root = editor.getRootElement();
+      if (!root) {
+        setOverlayElement(null);
+        setOverlayRect(null);
+        return;
+      }
+
+      const scrollArea =
+        (root.closest("[data-editor-scroll-area]") as HTMLElement | null) ||
+        root.parentElement;
+      const overlayParent = scrollArea?.parentElement ?? scrollArea;
+      setOverlayElement(overlayParent);
+      setOverlayRect(overlayParent?.getBoundingClientRect() ?? null);
+    };
+
+    resolveOverlayRect();
+    window.addEventListener("resize", resolveOverlayRect);
+    return () => window.removeEventListener("resize", resolveOverlayRect);
+  }, [editor]);
 
   const refreshActiveCell = useCallback((forceGeometry = false) => {
     editor.getEditorState().read(() => {
@@ -183,13 +212,39 @@ export default function TableCellActionMenuPlugin() {
 
   useEffect(() => {
     const onWindowChange = () => scheduleRefreshActiveCell(true);
+    const onScroll = () => {
+      setIsScrolling(true);
+      onWindowChange();
+      if (scrollTimeoutRef.current !== null) {
+        window.clearTimeout(scrollTimeoutRef.current);
+      }
+      scrollTimeoutRef.current = window.setTimeout(() => {
+        scrollTimeoutRef.current = null;
+        setIsScrolling(false);
+      }, 120);
+    };
+
     window.addEventListener("resize", onWindowChange);
-    window.addEventListener("scroll", onWindowChange, true);
+    window.addEventListener("scroll", onScroll, true);
     return () => {
       window.removeEventListener("resize", onWindowChange);
-      window.removeEventListener("scroll", onWindowChange, true);
+      window.removeEventListener("scroll", onScroll, true);
+      if (scrollTimeoutRef.current !== null) {
+        window.clearTimeout(scrollTimeoutRef.current);
+      }
     };
   }, [scheduleRefreshActiveCell]);
+
+  useEffect(() => {
+    const onResizeStateChange = (event: Event) => {
+      const detail =
+        event instanceof CustomEvent ? (event.detail as { isResizing?: boolean } | undefined) : undefined;
+      setIsResizing(Boolean(detail?.isResizing));
+    };
+
+    window.addEventListener(TABLE_CELL_RESIZE_STATE_EVENT, onResizeStateChange);
+    return () => window.removeEventListener(TABLE_CELL_RESIZE_STATE_EVENT, onResizeStateChange);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -198,6 +253,9 @@ export default function TableCellActionMenuPlugin() {
       }
       if (colorApplyRafRef.current !== null) {
         cancelAnimationFrame(colorApplyRafRef.current);
+      }
+      if (scrollTimeoutRef.current !== null) {
+        window.clearTimeout(scrollTimeoutRef.current);
       }
     };
   }, []);
@@ -273,20 +331,27 @@ export default function TableCellActionMenuPlugin() {
 
   const canShow = useMemo(() => {
     return (
+      !isResizing &&
+      !isScrolling &&
       activeCell &&
+      overlayElement &&
+      overlayRect &&
       Number.isFinite(activeCell.rect.top) &&
       Number.isFinite(activeCell.rect.left)
     );
-  }, [activeCell]);
+  }, [activeCell, isResizing, isScrolling, overlayElement, overlayRect]);
 
-  if (!canShow || !activeCell) return null;
+  if (!canShow || !activeCell || !overlayElement || !overlayRect) return null;
 
-  return (
+  const menuTop = activeCell.rect.top - overlayRect.top + 4;
+  const menuLeft = activeCell.rect.right - overlayRect.left - 34;
+
+  return createPortal(
     <div
-      className="fixed z-50"
+      className="absolute z-20"
       style={{
-        top: Math.max(8, activeCell.rect.top + 4),
-        left: Math.max(8, activeCell.rect.right - 34),
+        top: menuTop,
+        left: menuLeft,
       }}
     >
       <DropdownMenu>
@@ -447,6 +512,7 @@ export default function TableCellActionMenuPlugin() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </div>
+    </div>,
+    overlayElement
   );
 }

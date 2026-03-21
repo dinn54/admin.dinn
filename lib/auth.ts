@@ -30,6 +30,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const isOnLogin = nextUrl.pathname.startsWith("/login");
+      const isOnLexicalDevRoute =
+        nextUrl.pathname.startsWith("/dev/lexical-ssr-compare") ||
+        nextUrl.pathname.startsWith("/dev/lexical-ssr-results");
+
+      if (isOnLexicalDevRoute) {
+        return true;
+      }
 
       if (isOnLogin) {
         if (isLoggedIn) {

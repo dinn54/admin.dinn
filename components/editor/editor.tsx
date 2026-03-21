@@ -17,7 +17,7 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { $convertToMarkdownString } from "@lexical/markdown";
 import { LexicalEditor } from "lexical";
-import React, { useEffect } from "react";
+import React, { memo, useEffect, useMemo } from "react";
 
 import { ImageNode } from "./nodes/ImageNode";
 import { YouTubeNode } from "./nodes/YouTubeNode";
@@ -28,12 +28,19 @@ import { CUSTOM_TRANSFORMERS } from "./markdown-transformers";
 import ToolbarPlugin from "./plugins/ToolbarPlugin";
 import { cn } from "@/lib/utils";
 import MarkdownInitializerPlugin from "./plugins/MarkdownInitializerPlugin";
+import NormalizeMediaParagraphPlugin from "./plugins/NormalizeMediaParagraphPlugin";
+import NormalizeTableColumnWidthsPlugin from "./plugins/NormalizeTableColumnWidthsPlugin";
 import { InsertPlugin } from "./plugins/insert-plugin";
 import TableCellActionMenuPlugin from "./plugins/TableCellActionMenuPlugin";
 import TableCellResizerPlugin from "./plugins/TableCellResizerPlugin";
-import TableBlockSelectorPlugin from "./plugins/TableBlockSelectorPlugin";
 import { isLexicalEditorStateString } from "@/lib/content-format";
 import theme from "./theme";
+import {
+  readOnlyRenderContentClassName,
+  readOnlyRenderFrameClassName,
+  readOnlyRenderRootClassName,
+  readOnlyRenderScrollAreaClassName,
+} from "./readOnlyRenderShell";
 
 function Placeholder() {
   return (
@@ -90,7 +97,7 @@ function EditorInitPlugin({
   return null;
 }
 
-export function Editor({
+function EditorComponent({
   readOnly = false,
   initialEditorState,
   content,
@@ -104,30 +111,46 @@ export function Editor({
   const resolvedInitialEditorState =
     initialEditorState ?? (hasLexicalState ? content : undefined);
   const legacyMarkdown = markdown ?? (!hasLexicalState ? content || "" : "");
+  const initialConfig = useMemo(
+    () => ({
+      ...editorConfig,
+      editorState: resolvedInitialEditorState,
+      editable: !readOnly,
+    }),
+    [readOnly, resolvedInitialEditorState]
+  );
 
   return (
-    <LexicalComposer
-      initialConfig={{
-        ...editorConfig,
-        editorState: resolvedInitialEditorState,
-        editable: !readOnly,
-      }}
-    >
+    <LexicalComposer initialConfig={initialConfig}>
       <div
         className={cn(
-          "relative flex h-full w-full flex-col",
+          readOnlyRenderRootClassName,
+          !readOnly && "h-full",
           !readOnly && "overflow-hidden rounded-lg border bg-background shadow-sm",
           className
         )}
       >
         {!readOnly && <ToolbarPlugin />}
-        <div className="relative min-h-0 flex-1">
-          <div data-editor-scroll-area className="absolute inset-0 overflow-y-auto">
+        <div
+          className={cn(
+            readOnlyRenderFrameClassName,
+            !readOnly && "min-h-0 flex-1"
+          )}
+        >
+          <div
+            data-editor-scroll-area
+            className={cn(
+              !readOnly && "absolute inset-0 overflow-x-auto overflow-y-auto",
+              readOnly && readOnlyRenderScrollAreaClassName
+            )}
+          >
             <RichTextPlugin
               contentEditable={
                 <ContentEditable
                   className={cn(
-                    "relative z-10 min-h-full w-full text-left outline-none",
+                    readOnly && readOnlyRenderContentClassName,
+                    !readOnly && "relative z-10 w-full text-left outline-none",
+                    !readOnly && "min-h-full",
                     !readOnly ? "pl-12 pr-4 py-2" : "py-2"
                   )}
                 />
@@ -143,11 +166,12 @@ export function Editor({
           <LinkPlugin />
           <ClickableLinkPlugin newTab />
           <CodeHighlightPlugin />
+          <NormalizeMediaParagraphPlugin />
+          {readOnly && <NormalizeTableColumnWidthsPlugin />}
           <MarkdownShortcutPlugin transformers={CUSTOM_TRANSFORMERS} />
           {!readOnly && <InsertPlugin />}
           {!readOnly && <TableCellActionMenuPlugin />}
           {!readOnly && <TableCellResizerPlugin />}
-          {!readOnly && <TableBlockSelectorPlugin />}
           {onChange && (
             <OnChangePlugin
               onChange={(editorState) => {
@@ -173,3 +197,5 @@ export function Editor({
     </LexicalComposer>
   );
 }
+
+export const Editor = memo(EditorComponent);

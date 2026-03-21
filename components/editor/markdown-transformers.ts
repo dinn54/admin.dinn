@@ -29,6 +29,8 @@ import {
   YouTubeNode,
 } from "./nodes/YouTubeNode";
 
+const OPTIONAL_IMAGE_TITLE = String.raw`(?:\s+"[^"]*")?`;
+
 export const IMAGE: Transformer = {
   dependencies: [ImageNode],
   export: (node) => {
@@ -39,9 +41,13 @@ export const IMAGE: Transformer = {
     const widthStr = typeof width === "number" ? ` =${width}x` : "";
     return `![${node.getAltText()}](${node.getSrc()}${widthStr})`;
   },
-  // Match: ![alt](src) or ![alt](src =500x)
-  importRegExp: /!\[([^[]*)\]\(([^)\s]+)(?:\s*=(\d+)x)?\)/,
-  regExp: /!\[([^[]*)\]\(([^)\s]+)(?:\s*=(\d+)x)?\)$/,
+  // Match: ![alt](src), ![alt](src "title"), or ![alt](src =500x "title")
+  importRegExp: new RegExp(
+    String.raw`!\[([^[]*)\]\(([^)\s]+)(?:\s*=(\d+)x)?${OPTIONAL_IMAGE_TITLE}\)`,
+  ),
+  regExp: new RegExp(
+    String.raw`!\[([^[]*)\]\(([^)\s]+)(?:\s*=(\d+)x)?${OPTIONAL_IMAGE_TITLE}\)$`,
+  ),
   replace: (textNode, match) => {
     const [, altText, src, widthStr] = match;
     const width = widthStr ? parseInt(widthStr, 10) : 500;

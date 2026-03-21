@@ -16,7 +16,6 @@ import {
   SerializedDecoratorBlockNode,
 } from "@lexical/react/LexicalDecoratorBlockNode";
 import * as React from "react";
-import { BlockEmbedMain } from "@/components/editor/ui/block-embed-main";
 import TweetComponent from "./TweetComponent";
 
 export const INSERT_TWEET_COMMAND: LexicalCommand<string> = createCommand(
@@ -110,21 +109,13 @@ export class TweetNode extends DecoratorBlockNode {
   }
 
   decorate(): React.ReactElement {
-    const format = this.__format;
-    let className = "min-h-[200px] flex";
-    if (format === "center") className += " justify-center";
-    else if (format === "right") className += " justify-end";
-    else className += " justify-start";
-
     return (
-      <BlockEmbedMain className={className}>
-        <TweetComponent
-          tweetID={this.__id}
-          format={format}
-          nodeKey={this.getKey()}
-          width={this.__width}
-        />
-      </BlockEmbedMain>
+      <TweetComponent
+        tweetID={this.__id}
+        format={this.__format}
+        nodeKey={this.getKey()}
+        width={this.__width}
+      />
     );
   }
 }

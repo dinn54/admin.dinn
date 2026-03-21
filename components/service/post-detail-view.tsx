@@ -18,8 +18,7 @@ import Link from "next/link";
 import { Post } from "@/app/services/[name]/[slug]/[postSlug]/page";
 import { toast } from "sonner";
 import { usePathname } from "next/navigation";
-import { generateHtmlFromContent } from "@/lib/generateHtmlFromContent";
-import { HtmlContentRenderer } from "@/components/content";
+import { Editor } from "@/components/editor/editor";
 
 interface PostDetailViewProps {
   post: Post;
@@ -50,12 +49,6 @@ export function PostDetailView({
     if (segments.length <= 1) return "/";
     return `/${segments.slice(0, -1).join("/")}`;
   }, [pathname]);
-
-  // 미리보기용: children이 없을 때 저장 콘텐츠(JSON/markdown)를 HTML로 변환
-  const contentHtml = useMemo(() => {
-    if (children || !post.content) return null;
-    return generateHtmlFromContent(post.content);
-  }, [children, post.content]);
 
   const handleScrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -335,8 +328,8 @@ export function PostDetailView({
         <div id="post-content">
           {children ? (
             children
-          ) : contentHtml ? (
-            <HtmlContentRenderer html={contentHtml} />
+          ) : post.content ? (
+            <Editor readOnly={true} content={post.content} />
           ) : (
             <div className="py-20 text-center text-slate-500">
               <p>콘텐츠를 불러올 수 없습니다.</p>

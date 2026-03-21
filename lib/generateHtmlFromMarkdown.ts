@@ -3,11 +3,12 @@ import { $convertFromMarkdownString } from "@lexical/markdown";
 import { $generateHtmlFromNodes } from "@lexical/html";
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import { ListItemNode, ListNode } from "@lexical/list";
-import { CodeNode, CodeHighlightNode } from "@lexical/code";
+import { CodeNode, CodeHighlightNode, registerCodeHighlighting } from "@lexical/code";
 import { AutoLinkNode, LinkNode } from "@lexical/link";
 import { TableNode, TableCellNode, TableRowNode } from "@lexical/table";
 import { parseHTML } from "linkedom";
 import theme from "@/components/editor/theme";
+import { setupPrism } from "@/components/editor/setupPrism";
 
 import {
   ServerImageNode,
@@ -17,6 +18,7 @@ import {
 } from "./serverNodes";
 import { SERVER_TRANSFORMERS } from "./serverTransformers";
 import { preprocessMarkdown } from "./preprocessMarkdown";
+import { normalizeGeneratedLexicalHtml } from "./normalizeGeneratedLexicalHtml";
 
 const ServerEditorNodes = [
   HeadingNode,
@@ -37,6 +39,8 @@ const ServerEditorNodes = [
 ];
 
 function createHtmlFromMarkdown(processedMarkdown: string): string {
+  setupPrism();
+
   const editor = createHeadlessEditor({
     theme,
     nodes: ServerEditorNodes,
@@ -44,6 +48,7 @@ function createHtmlFromMarkdown(processedMarkdown: string): string {
       console.error("[generateHtmlFromMarkdown] Lexical error:", error);
     },
   });
+  const unregisterCodeHighlighting = registerCodeHighlighting(editor);
 
   editor.update(
     () => {
@@ -59,8 +64,9 @@ function createHtmlFromMarkdown(processedMarkdown: string): string {
     },
     { discrete: true }
   );
+  unregisterCodeHighlighting();
 
-  return html;
+  return normalizeGeneratedLexicalHtml(html);
 }
 
 function setGlobalDom(key: "window" | "document", value: unknown): void {

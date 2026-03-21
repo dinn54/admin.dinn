@@ -15,6 +15,13 @@ import {
 } from "lexical";
 import { $isImageNode } from "./ImageNode";
 import { clampToContainerWidth, getResizeBoundaryWidth } from "./resizeBounds";
+import theme from "../theme";
+import {
+  AlignableBlock,
+  MediaFigure,
+  MediaFrame,
+} from "../ui/media-blocks";
+import { getBlockAlignmentClass } from "./block-alignment";
 
 const imageCache = new Set();
 
@@ -52,7 +59,7 @@ function LazyImage({
       alt={altText}
       ref={imageRef}
       style={{
-        width: `${width}px`,
+        width: "100%",
         height: "auto",
         maxWidth: "100%",
       }}
@@ -65,6 +72,7 @@ export default function LexicalImageComponent({
   src,
   altText,
   nodeKey,
+  format,
   width,
   height,
   maxWidth,
@@ -75,6 +83,7 @@ export default function LexicalImageComponent({
   src: string;
   altText: string;
   nodeKey: NodeKey;
+  format: "center" | "end" | "justify" | "left" | "right" | "start" | null;
   width: "inherit" | number;
   height: "inherit" | number;
   maxWidth: number;
@@ -86,7 +95,7 @@ export default function LexicalImageComponent({
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
   const imageRef = useRef<null | HTMLImageElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLSpanElement>(null);
   const [isResizing, setIsResizing] = useState(false);
   const [currentWidth, setCurrentWidth] = useState(
     typeof width === "number" ? width : 500
@@ -197,40 +206,54 @@ export default function LexicalImageComponent({
     });
   }, [currentWidth, editor, isResizing, nodeKey]);
 
-  return (
-    <Suspense
-      fallback={<div className="w-full h-[300px] bg-slate-100 animate-pulse" />}
-    >
-      <div
+  const figure = (
+    <MediaFigure as={showCaption && caption ? "figure" : "span"}>
+      <span
         ref={containerRef}
-        className={`relative inline-block ${isSelected && isEditable ? "ring-2 ring-indigo-500 rounded-lg" : ""}`}
+        className={`${theme.resizable.node} ${isSelected && isEditable ? theme.embedBlock.focus : ""}`}
         style={{ width: `${currentWidth}px`, maxWidth: "100%" }}
       >
-        <LazyImage
-          className="w-full h-auto rounded-lg shadow-sm"
-          src={src}
-          altText={altText}
-          imageRef={imageRef}
-          width={currentWidth}
-        />
-        {/* Resize Handles - only show when selected and editable */}
+        <span className={theme.resizable.frame}>
+          <LazyImage
+            className={theme.media.image}
+            src={src}
+            altText={altText}
+            imageRef={imageRef}
+            width={currentWidth}
+          />
+        </span>
         {isSelected && isEditable && (
           <>
             <div
-              className="resize-handle absolute left-0 top-0 bottom-0 w-3 cursor-ew-resize flex items-center justify-center hover:bg-indigo-500/20 transition-colors"
+              className={`resize-handle ${theme.resizable.handle} ${theme.resizable.handleLeft}`}
               onMouseDown={(e) => handleResizeStart(e, "left")}
             >
-              <div className="w-1 h-8 bg-indigo-500 rounded-full opacity-70" />
+              <div className={theme.resizable.handleBar} />
             </div>
             <div
-              className="resize-handle absolute right-0 top-0 bottom-0 w-3 cursor-ew-resize flex items-center justify-center hover:bg-indigo-500/20 transition-colors"
+              className={`resize-handle ${theme.resizable.handle} ${theme.resizable.handleRight}`}
               onMouseDown={(e) => handleResizeStart(e, "right")}
             >
-              <div className="w-1 h-8 bg-indigo-500 rounded-full opacity-70" />
+              <div className={theme.resizable.handleBar} />
             </div>
           </>
         )}
-      </div>
+      </span>
+    </MediaFigure>
+  );
+
+  const needsBlockAlignment =
+    format === "center" || format === "right" || format === "end" || format === "justify";
+
+  return (
+    <Suspense
+      fallback={<div className={theme.media.loading} />}
+    >
+      {needsBlockAlignment ? (
+        <AlignableBlock format={format}>{figure}</AlignableBlock>
+      ) : (
+        <div className={theme.decoratorContents}>{figure}</div>
+      )}
     </Suspense>
   );
 }
