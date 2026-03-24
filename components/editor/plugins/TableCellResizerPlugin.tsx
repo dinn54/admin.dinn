@@ -2,7 +2,7 @@
 
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $getNearestNodeFromDOMNode } from "lexical";
-import { $isTableCellNode, $isTableRowNode } from "@lexical/table";
+import { $findTableNode, $isTableCellNode, $isTableNode, $isTableRowNode } from "@lexical/table";
 import { useEffect, useRef } from "react";
 
 const EDGE_HIT_AREA_PX = 8;
@@ -18,6 +18,27 @@ function getClosestCellElement(
   const cell = target.closest("td,th");
   if (!cell || !root.contains(cell)) return null;
   return cell as HTMLTableCellElement;
+}
+
+function getTableColumnWidths(tableElement: HTMLTableElement): number[] {
+  const colWidths = Array.from(
+    tableElement.querySelectorAll<HTMLTableColElement>(":scope > colgroup > col")
+  )
+    .map((colElement) => Math.round(colElement.getBoundingClientRect().width))
+    .filter((width) => width > 0);
+
+  if (colWidths.length > 0) {
+    return colWidths;
+  }
+
+  const firstRow = tableElement.querySelector(":scope > tbody > tr, :scope > thead > tr, :scope > tr");
+  if (!firstRow) {
+    return [];
+  }
+
+  return Array.from(firstRow.children)
+    .map((cellElement) => Math.round((cellElement as HTMLElement).getBoundingClientRect().width))
+    .filter((width) => width > 0);
 }
 
 export default function TableCellResizerPlugin() {
@@ -125,15 +146,23 @@ export default function TableCellResizerPlugin() {
 
       if (resizeModeRef.current === "col" && activeCellRef.current) {
         const cellEl = activeCellRef.current;
+        const tableElement = cellEl.closest("table");
         const finalWidth = Math.max(
           MIN_CELL_WIDTH_PX,
           Math.round(cellEl.getBoundingClientRect().width)
         );
+        const nextColWidths =
+          tableElement instanceof HTMLTableElement ? getTableColumnWidths(tableElement) : [];
 
         editor.update(() => {
           const maybeNode = $getNearestNodeFromDOMNode(cellEl);
           if ($isTableCellNode(maybeNode)) {
             maybeNode.setWidth(finalWidth);
+
+            const tableNode = $findTableNode(maybeNode);
+            if ($isTableNode(tableNode) && nextColWidths.length > 0) {
+              tableNode.setColWidths(nextColWidths);
+            }
           }
         });
       }

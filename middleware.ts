@@ -7,11 +7,12 @@ export const config = {
     /*
      * Match all request paths except:
      * - api/auth (auth API routes)
+     * - dev routes used for local rendering checks
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
      */
-    "/((?!api/auth|api/webhooks|_next/static|_next/image|favicon.ico|public).*)",
+    "/((?!api/auth|api/webhooks|dev|_next/static|_next/image|favicon.ico|public).*)",
   ],
 };
