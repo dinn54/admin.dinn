@@ -78,8 +78,8 @@ importers:
         specifier: ^4.1.0
         version: 4.1.0
       dinn-lexical:
-        specifier: git+https://github.com/dinn54/dinn-lexical.git#ae855e49bbe0ce5ad1208173b3ab18364e2bc218
-        version: https://codeload.github.com/dinn54/dinn-lexical/tar.gz/ae855e49bbe0ce5ad1208173b3ab18364e2bc218(@lexical/code@0.39.0)(@lexical/headless@0.39.0)(@lexical/html@0.39.0)(@lexical/link@0.39.0)(@lexical/list@0.39.0)(@lexical/markdown@0.39.0)(@lexical/react@0.39.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(yjs@13.6.28))(@lexical/rich-text@0.39.0)(@lexical/table@0.39.0)(@lexical/utils@0.39.0)(lexical@0.39.0)(linkedom@0.18.12)(prismjs@1.30.0)(react-dom@19.2.3(react@19.2.3))(react-tweet@3.3.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3)
+        specifier: git+https://github.com/dinn54/dinn-lexical.git#39c788369b30b2361c2257bd3357c8e349d19e81
+        version: https://codeload.github.com/dinn54/dinn-lexical/tar.gz/39c788369b30b2361c2257bd3357c8e349d19e81(@lexical/code@0.39.0)(@lexical/headless@0.39.0)(@lexical/html@0.39.0)(@lexical/link@0.39.0)(@lexical/list@0.39.0)(@lexical/markdown@0.39.0)(@lexical/react@0.39.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(yjs@13.6.28))(@lexical/rich-text@0.39.0)(@lexical/table@0.39.0)(@lexical/utils@0.39.0)(lexical@0.39.0)(linkedom@0.18.12)(prismjs@1.30.0)(react-dom@19.2.3(react@19.2.3))(react-tweet@3.3.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3)
       embla-carousel-react:
         specifier: ^8.6.0
         version: 8.6.0(react@19.2.3)
@@ -2100,8 +2100,8 @@ packages:
     resolution: {integrity: sha512-sSuxWU5j5SR9QQji/o2qMvqRNYRDOcBTgsJ/DeCf4iSN4gW+gNMXM7wFIP+fdXZxoNiAnHUTGjCr+TSWXdRDKg==}
     engines: {node: '>=0.3.1'}
 
-  dinn-lexical@https://codeload.github.com/dinn54/dinn-lexical/tar.gz/ae855e49bbe0ce5ad1208173b3ab18364e2bc218:
-    resolution: {tarball: https://codeload.github.com/dinn54/dinn-lexical/tar.gz/ae855e49bbe0ce5ad1208173b3ab18364e2bc218}
+  dinn-lexical@https://codeload.github.com/dinn54/dinn-lexical/tar.gz/39c788369b30b2361c2257bd3357c8e349d19e81:
+    resolution: {tarball: https://codeload.github.com/dinn54/dinn-lexical/tar.gz/39c788369b30b2361c2257bd3357c8e349d19e81}
     version: 0.1.0
     peerDependencies:
       '@lexical/code': ^0.39.0
@@ -6154,7 +6154,7 @@ snapshots:
 
   diff@8.0.2: {}
 
-  dinn-lexical@https://codeload.github.com/dinn54/dinn-lexical/tar.gz/ae855e49bbe0ce5ad1208173b3ab18364e2bc218(@lexical/code@0.39.0)(@lexical/headless@0.39.0)(@lexical/html@0.39.0)(@lexical/link@0.39.0)(@lexical/list@0.39.0)(@lexical/markdown@0.39.0)(@lexical/react@0.39.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(yjs@13.6.28))(@lexical/rich-text@0.39.0)(@lexical/table@0.39.0)(@lexical/utils@0.39.0)(lexical@0.39.0)(linkedom@0.18.12)(prismjs@1.30.0)(react-dom@19.2.3(react@19.2.3))(react-tweet@3.3.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3):
+  dinn-lexical@https://codeload.github.com/dinn54/dinn-lexical/tar.gz/39c788369b30b2361c2257bd3357c8e349d19e81(@lexical/code@0.39.0)(@lexical/headless@0.39.0)(@lexical/html@0.39.0)(@lexical/link@0.39.0)(@lexical/list@0.39.0)(@lexical/markdown@0.39.0)(@lexical/react@0.39.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(yjs@13.6.28))(@lexical/rich-text@0.39.0)(@lexical/table@0.39.0)(@lexical/utils@0.39.0)(lexical@0.39.0)(linkedom@0.18.12)(prismjs@1.30.0)(react-dom@19.2.3(react@19.2.3))(react-tweet@3.3.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3):
     dependencies:
       '@lexical/code': 0.39.0
       '@lexical/headless': 0.39.0
