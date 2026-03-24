@@ -45,6 +45,13 @@ type ActiveCellState = {
 const DEFAULT_CELL_BG = "#ffffff";
 const DEFAULT_HEADER_BG = "#f8fafc";
 
+function areSameCellKeys(left: string[], right: string[]): boolean {
+  return (
+    left.length === right.length &&
+    left.every((key, index) => key === right[index])
+  );
+}
+
 function getSelectedTableCellsFromSelection(): TableCellNode[] {
   const selection = $getSelection();
   if (!selection) return [];
@@ -95,11 +102,13 @@ function getCellDomElement(
 export default function TableCellActionMenuPlugin() {
   const [editor] = useLexicalComposerContext();
   const [activeCell, setActiveCell] = useState<ActiveCellState | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
   const [overlayElement, setOverlayElement] = useState<HTMLElement | null>(null);
   const colorInputRef = useRef<HTMLInputElement | null>(null);
   const activeCellRef = useRef<ActiveCellState | null>(null);
+  const menuTargetKeysRef = useRef<string[] | null>(null);
   const rafRef = useRef<number | null>(null);
   const isColorPickingRef = useRef(false);
   const colorApplyRafRef = useRef<number | null>(null);
@@ -145,10 +154,18 @@ export default function TableCellActionMenuPlugin() {
         (firstCell.hasHeader() ? DEFAULT_HEADER_BG : DEFAULT_CELL_BG);
       const verticalAlign = firstCell.getVerticalAlign() || "top";
       const prev = activeCellRef.current;
+      const currentMenuTargetKeys = menuTargetKeysRef.current;
+      if (
+        isMenuOpen &&
+        currentMenuTargetKeys &&
+        !areSameCellKeys(currentMenuTargetKeys, nextKeys)
+      ) {
+        menuTargetKeysRef.current = null;
+        setIsMenuOpen(false);
+      }
       const sameSelection =
         !!prev &&
-        prev.keys.length === nextKeys.length &&
-        prev.keys.every((key, index) => key === nextKeys[index]);
+        areSameCellKeys(prev.keys, nextKeys);
 
       // Most color-drag updates don't need geometry recalculation.
       if (sameSelection && !forceGeometry && prev) {
@@ -269,7 +286,7 @@ export default function TableCellActionMenuPlugin() {
   const applyPendingColor = useCallback(() => {
     const color = pendingColorRef.current;
     if (!color) return;
-    const cellKeys = activeCellRef.current?.keys ?? [];
+    const cellKeys = menuTargetKeysRef.current ?? activeCellRef.current?.keys ?? [];
     if (cellKeys.length === 0) return;
     editor.update(() => {
       for (const key of cellKeys) {
@@ -321,7 +338,7 @@ export default function TableCellActionMenuPlugin() {
 
   const runInUpdate = useCallback(
     (fn: (cellNode: TableCellNode) => void, mode: "all" | "primary" = "primary") => {
-      const cellKeys = activeCell?.keys ?? [];
+      const cellKeys = menuTargetKeysRef.current ?? activeCell?.keys ?? [];
       if (cellKeys.length === 0) return;
       editor.update(() => {
         const targetKeys = mode === "all" ? cellKeys : [cellKeys[0]];
@@ -361,7 +378,19 @@ export default function TableCellActionMenuPlugin() {
         left: menuLeft,
       }}
     >
-      <DropdownMenu>
+      <DropdownMenu
+        open={isMenuOpen}
+        onOpenChange={(nextOpen) => {
+          setIsMenuOpen(nextOpen);
+          if (nextOpen) {
+            menuTargetKeysRef.current = activeCell.keys;
+            return;
+          }
+
+          menuTargetKeysRef.current = null;
+          flushColorPicking();
+        }}
+      >
         <DropdownMenuTrigger
           aria-label="테이블 셀 설정"
           className="inline-flex h-7 w-7 items-center justify-center rounded-md border bg-background text-foreground shadow-sm hover:bg-accent"
