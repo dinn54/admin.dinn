@@ -80,13 +80,24 @@ function getSelectedTableCellsFromSelection(): TableCellNode[] {
   return [];
 }
 
+function getCellDomElement(
+  editor: ReturnType<typeof useLexicalComposerContext>[0],
+  key: string
+): HTMLElement | null {
+  const baseElement = editor.getElementByKey(key);
+  if (!baseElement) {
+    return null;
+  }
+
+  return (baseElement.closest("td,th") as HTMLElement | null) ?? baseElement;
+}
+
 export default function TableCellActionMenuPlugin() {
   const [editor] = useLexicalComposerContext();
   const [activeCell, setActiveCell] = useState<ActiveCellState | null>(null);
   const [isResizing, setIsResizing] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
   const [overlayElement, setOverlayElement] = useState<HTMLElement | null>(null);
-  const [overlayRect, setOverlayRect] = useState<DOMRect | null>(null);
   const colorInputRef = useRef<HTMLInputElement | null>(null);
   const activeCellRef = useRef<ActiveCellState | null>(null);
   const rafRef = useRef<number | null>(null);
@@ -100,11 +111,10 @@ export default function TableCellActionMenuPlugin() {
   }, [activeCell]);
 
   useEffect(() => {
-    const resolveOverlayRect = () => {
+    const resolveOverlayElement = () => {
       const root = editor.getRootElement();
       if (!root) {
         setOverlayElement(null);
-        setOverlayRect(null);
         return;
       }
 
@@ -113,12 +123,11 @@ export default function TableCellActionMenuPlugin() {
         root.parentElement;
       const overlayParent = scrollArea?.parentElement ?? scrollArea;
       setOverlayElement(overlayParent);
-      setOverlayRect(overlayParent?.getBoundingClientRect() ?? null);
     };
 
-    resolveOverlayRect();
-    window.addEventListener("resize", resolveOverlayRect);
-    return () => window.removeEventListener("resize", resolveOverlayRect);
+    resolveOverlayElement();
+    window.addEventListener("resize", resolveOverlayElement);
+    return () => window.removeEventListener("resize", resolveOverlayElement);
   }, [editor]);
 
   const refreshActiveCell = useCallback((forceGeometry = false) => {
@@ -157,10 +166,7 @@ export default function TableCellActionMenuPlugin() {
       }
 
       const cellRects = tableCells
-        .map(
-          (cell) =>
-            editor.getElementByKey(cell.getKey())?.getBoundingClientRect() ?? null
-        )
+        .map((cell) => getCellDomElement(editor, cell.getKey())?.getBoundingClientRect() ?? null)
         .filter((rect): rect is DOMRect => rect !== null);
       if (cellRects.length === 0) {
         setActiveCell(null);
@@ -335,13 +341,14 @@ export default function TableCellActionMenuPlugin() {
       !isScrolling &&
       activeCell &&
       overlayElement &&
-      overlayRect &&
       Number.isFinite(activeCell.rect.top) &&
       Number.isFinite(activeCell.rect.left)
     );
-  }, [activeCell, isResizing, isScrolling, overlayElement, overlayRect]);
+  }, [activeCell, isResizing, isScrolling, overlayElement]);
 
-  if (!canShow || !activeCell || !overlayElement || !overlayRect) return null;
+  if (!canShow || !activeCell || !overlayElement) return null;
+
+  const overlayRect = overlayElement.getBoundingClientRect();
 
   const menuTop = activeCell.rect.top - overlayRect.top + 4;
   const menuLeft = activeCell.rect.right - overlayRect.left - 34;
