@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { ReadOnlyLexicalRenderer } from "@/components/editor/ReadOnlyLexicalRenderer";
-import { ServerGeneratedLexicalHtml } from "@/components/editor/ui/ServerGeneratedLexicalHtml";
 import { lexicalComparisonFixtures } from "@/lib/dev/lexicalComparisonFixtures";
+import { DetailLexicalViewer } from "dinn-lexical/server";
 
-const fixtureIds = ["user-lexical", "user-markdown", "table-editor"] as const;
+const fixtureIds = ["detail-showcase", "user-lexical", "user-markdown", "table-editor"] as const;
 
 export default function LexicalSsrResultsPage() {
   const fixtures = fixtureIds.map((id) => lexicalComparisonFixtures[id]);
@@ -19,9 +19,18 @@ export default function LexicalSsrResultsPage() {
             <div className="space-y-2">
               <h1 className="text-3xl font-semibold">Server vs Client Render View</h1>
               <p className="max-w-3xl text-sm text-slate-600">
-                Two fixture cases are rendered side by side so you can visually compare the
-                server-generated Lexical HTML and the hydrated read-only Lexical editor output.
+                Compare the two public-facing viewer strategies side by side. The left panel keeps
+                the server-generated HTML as the source of truth and only enhances rich embeds on
+                the client, while the right panel mounts a Lexical read-only tree in the browser.
               </p>
+              <div className="flex flex-wrap gap-2 pt-1 text-xs font-medium text-slate-600">
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1">
+                  Left: SSR HTML + lightweight CSR enhancement
+                </span>
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1">
+                  Right: CSR Lexical read-only viewer
+                </span>
+              </div>
             </div>
             <Link
               href="/dev/lexical-ssr-compare?fixture=user-lexical"
@@ -54,17 +63,51 @@ export default function LexicalSsrResultsPage() {
 
               <div className="grid gap-5 xl:grid-cols-2">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="mb-4 text-sm font-medium text-slate-900">
-                    ServerGeneratedLexicalHtml
+                  <div className="mb-4 space-y-2">
+                    <div className="text-sm font-medium text-slate-900">DetailLexicalViewer</div>
+                    <p className="text-sm leading-6 text-slate-600">
+                      Uses the server-rendered article markup first, then hydrates only the parts
+                      that need richer client behavior such as tweet cards. This is the detail page
+                      strategy for public reading surfaces.
+                    </p>
+                    <div className="flex flex-wrap gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-slate-500">
+                      <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                        SSR first
+                      </span>
+                      <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                        Non-Lexical hydration
+                      </span>
+                      <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                        Public detail viewer
+                      </span>
+                    </div>
                   </div>
                   <div className="rounded-xl border border-slate-200 bg-white p-4">
-                    <ServerGeneratedLexicalHtml content={content} />
+                    <DetailLexicalViewer content={content} width="100%" />
                   </div>
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="mb-4 text-sm font-medium text-slate-900">
-                    ReadOnlyLexicalRenderer
+                  <div className="mb-4 space-y-2">
+                    <div className="text-sm font-medium text-slate-900">
+                      ReadOnlyLexicalRenderer
+                    </div>
+                    <p className="text-sm leading-6 text-slate-600">
+                      Mounts a full Lexical read-only editor tree on the client. This is useful
+                      when the app needs editor-parity rendering or preview behavior inside admin
+                      surfaces, but it carries the Lexical runtime cost.
+                    </p>
+                    <div className="flex flex-wrap gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-slate-500">
+                      <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                        CSR only
+                      </span>
+                      <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                        Lexical runtime
+                      </span>
+                      <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                        Admin preview
+                      </span>
+                    </div>
                   </div>
                   <div className="rounded-xl border border-slate-200 bg-white p-4">
                     <ReadOnlyLexicalRenderer content={content} />
