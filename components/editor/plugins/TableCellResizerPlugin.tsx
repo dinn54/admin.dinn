@@ -21,13 +21,17 @@ function getClosestCellElement(
 }
 
 function getTableColumnWidths(tableElement: HTMLTableElement): number[] {
-  const colWidths = Array.from(
+  const colElements = Array.from(
     tableElement.querySelectorAll<HTMLTableColElement>(":scope > colgroup > col")
+  );
+
+  const colWidths = Array.from(
+    colElements
   )
     .map((colElement) => Math.round(colElement.getBoundingClientRect().width))
     .filter((width) => width > 0);
 
-  if (colWidths.length > 0) {
+  if (colElements.length > 0 && colWidths.length === colElements.length) {
     return colWidths;
   }
 
@@ -41,12 +45,74 @@ function getTableColumnWidths(tableElement: HTMLTableElement): number[] {
     .filter((width) => width > 0);
 }
 
+function getCellColumnIndex(cellElement: HTMLTableCellElement): number {
+  const rowElement = cellElement.parentElement;
+  if (!(rowElement instanceof HTMLTableRowElement)) {
+    return cellElement.cellIndex;
+  }
+
+  let columnIndex = 0;
+  for (const sibling of Array.from(rowElement.cells)) {
+    if (sibling === cellElement) {
+      return columnIndex;
+    }
+
+    columnIndex += Math.max(sibling.colSpan || 1, 1);
+  }
+
+  return columnIndex;
+}
+
+function applyColumnWidth(tableElement: HTMLTableElement, columnIndex: number, width: number): void {
+  const colElements = Array.from(
+    tableElement.querySelectorAll<HTMLTableColElement>(":scope > colgroup > col")
+  );
+  const nextWidth = Math.max(MIN_CELL_WIDTH_PX, Math.round(width));
+
+  if (colElements[columnIndex]) {
+    colElements[columnIndex].style.width = `${nextWidth}px`;
+    colElements[columnIndex].setAttribute("width", `${nextWidth}`);
+  }
+
+  const currentWidths = getTableColumnWidths(tableElement);
+  if (currentWidths.length > 0) {
+    const totalWidth = currentWidths.reduce((sum, value) => sum + value, 0);
+    tableElement.style.width = `${totalWidth}px`;
+    tableElement.style.maxWidth = "100%";
+  }
+}
+
+function applyTableWidths(tableElement: HTMLTableElement, widths: number[]): void {
+  widths.forEach((columnWidth, index) => {
+    applyColumnWidth(tableElement, index, columnWidth);
+  });
+
+  const totalWidth = widths.reduce((sum, value) => sum + value, 0);
+  if (totalWidth > 0) {
+    tableElement.style.width = `${Math.round(totalWidth)}px`;
+    tableElement.style.maxWidth = "100%";
+  }
+}
+
+function getTableMaxWidth(tableElement: HTMLTableElement): number | null {
+  const wrapperElement = tableElement.parentElement;
+  if (!(wrapperElement instanceof HTMLElement)) {
+    return null;
+  }
+
+  const width = Math.round(wrapperElement.getBoundingClientRect().width);
+  return width > 0 ? width : null;
+}
+
 export default function TableCellResizerPlugin() {
   const [editor] = useLexicalComposerContext();
   const isResizingRef = useRef(false);
   const resizeModeRef = useRef<"col" | "row" | null>(null);
   const activeCellRef = useRef<HTMLTableCellElement | null>(null);
   const activeRowRef = useRef<HTMLTableRowElement | null>(null);
+  const activeColumnIndexRef = useRef<number | null>(null);
+  const startColWidthsRef = useRef<number[]>([]);
+  const startTableLeftOffsetRef = useRef<number | null>(null);
   const startXRef = useRef(0);
   const startYRef = useRef(0);
   const startWidthRef = useRef(0);
@@ -75,7 +141,46 @@ export default function TableCellResizerPlugin() {
         if (resizeModeRef.current === "col" && activeCellRef.current) {
           const deltaX = event.clientX - startXRef.current;
           const nextWidth = Math.max(MIN_CELL_WIDTH_PX, startWidthRef.current + deltaX);
-          activeCellRef.current.style.width = `${nextWidth}px`;
+          const tableElement = activeCellRef.current.closest("table");
+          if (tableElement instanceof HTMLTableElement) {
+            const columnIndex = activeColumnIndexRef.current ?? getCellColumnIndex(activeCellRef.current);
+            const baseWidths = startColWidthsRef.current.length
+              ? [...startColWidthsRef.current]
+              : getTableColumnWidths(tableElement);
+            const nextColumnIndex = columnIndex + 1;
+
+            if (baseWidths[columnIndex] != null && baseWidths[nextColumnIndex] != null) {
+              const totalPairWidth = baseWidths[columnIndex] + baseWidths[nextColumnIndex];
+              const constrainedWidth = Math.min(
+                totalPairWidth - MIN_CELL_WIDTH_PX,
+                Math.max(MIN_CELL_WIDTH_PX, nextWidth)
+              );
+              baseWidths[columnIndex] = constrainedWidth;
+              baseWidths[nextColumnIndex] = totalPairWidth - constrainedWidth;
+              applyTableWidths(tableElement, baseWidths);
+            } else {
+              const otherWidths = baseWidths.reduce(
+                (sum, columnWidth, index) => (index === columnIndex ? sum : sum + columnWidth),
+                0
+              );
+              const maxTableWidth = getTableMaxWidth(tableElement);
+              const maxColumnWidth =
+                maxTableWidth != null
+                  ? Math.max(MIN_CELL_WIDTH_PX, maxTableWidth - otherWidths)
+                  : Number.POSITIVE_INFINITY;
+              const constrainedWidth = Math.min(maxColumnWidth, nextWidth);
+
+              baseWidths[columnIndex] = constrainedWidth;
+              applyTableWidths(tableElement, baseWidths);
+
+              if (startTableLeftOffsetRef.current != null) {
+                tableElement.style.marginLeft = `${startTableLeftOffsetRef.current}px`;
+                tableElement.style.marginRight = "auto";
+              }
+            }
+          } else {
+            activeCellRef.current.style.width = `${nextWidth}px`;
+          }
         } else if (resizeModeRef.current === "row" && activeRowRef.current) {
           const deltaY = event.clientY - startYRef.current;
           const nextHeight = Math.max(MIN_ROW_HEIGHT_PX, startHeightRef.current + deltaY);
@@ -133,8 +238,27 @@ export default function TableCellResizerPlugin() {
       } else {
         resizeModeRef.current = "col";
         activeCellRef.current = cell;
+        const columnIndex = getCellColumnIndex(cell);
+        activeColumnIndexRef.current = columnIndex;
         startXRef.current = event.clientX;
-        startWidthRef.current = cell.getBoundingClientRect().width;
+        const tableElement = cell.closest("table");
+        if (tableElement instanceof HTMLTableElement) {
+          const widths = getTableColumnWidths(tableElement);
+          startColWidthsRef.current = widths;
+          const wrapperElement = tableElement.parentElement;
+          if (wrapperElement instanceof HTMLElement) {
+            const tableRect = tableElement.getBoundingClientRect();
+            const wrapperRect = wrapperElement.getBoundingClientRect();
+            startTableLeftOffsetRef.current = Math.round(tableRect.left - wrapperRect.left);
+          } else {
+            startTableLeftOffsetRef.current = null;
+          }
+          startWidthRef.current = widths[columnIndex] ?? cell.getBoundingClientRect().width;
+        } else {
+          startColWidthsRef.current = [];
+          startTableLeftOffsetRef.current = null;
+          startWidthRef.current = cell.getBoundingClientRect().width;
+        }
         root.style.cursor = "col-resize";
       }
       document.body.style.userSelect = "none";
@@ -186,6 +310,9 @@ export default function TableCellResizerPlugin() {
       resizeModeRef.current = null;
       activeCellRef.current = null;
       activeRowRef.current = null;
+      activeColumnIndexRef.current = null;
+      startColWidthsRef.current = [];
+      startTableLeftOffsetRef.current = null;
       document.body.style.userSelect = "";
       resetCursor();
       emitResizeState(false);
