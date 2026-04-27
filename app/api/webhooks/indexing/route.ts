@@ -5,6 +5,8 @@ import { notifySlack } from "@/lib/slack";
 
 interface WebhookRecord {
   slug?: string;
+  title?: string | null;
+  content?: string | null;
   is_visible?: boolean | null;
   published_at?: string | null;
 }
@@ -72,6 +74,15 @@ export async function POST(request: NextRequest) {
       const oldStatus = getPostStatus(old_record);
       const newSlug = record?.slug;
       const oldSlug = old_record?.slug;
+
+      // status, slug, title, content 변경이 없으면 무시 (view_count 등 무관한 필드 변경 제외)
+      const significantChange =
+        oldStatus !== newStatus ||
+        oldSlug !== newSlug ||
+        old_record?.title !== record?.title ||
+        old_record?.content !== record?.content;
+
+      if (!significantChange) break;
 
       if (oldStatus === "published" && oldSlug && newSlug && oldSlug !== newSlug) {
         await deindexing(oldSlug, "슬러그 변경");
