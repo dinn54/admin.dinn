@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requestIndexing, requestDeindexing } from "@/lib/google-indexing";
+import { pingSitemaps } from "@/lib/sitemap-ping";
 
 interface WebhookRecord {
   slug?: string;
@@ -27,7 +28,10 @@ export async function POST(request: NextRequest) {
     switch (type) {
       case "INSERT": {
         if (record?.status === "published" && record.slug) {
-          await requestIndexing(record.slug);
+          await Promise.all([
+            requestIndexing(record.slug),
+            pingSitemaps(),
+          ]);
         }
         break;
       }
@@ -40,10 +44,11 @@ export async function POST(request: NextRequest) {
         if (!slug) break;
 
         if (newStatus === "published") {
-          // published로 변경되었거나, published 상태에서 내용 수정
-          await requestIndexing(slug);
+          await Promise.all([
+            requestIndexing(slug),
+            pingSitemaps(),
+          ]);
         } else if (oldStatus === "published" && newStatus !== "published") {
-          // published에서 다른 상태로 변경 → 색인 제거
           await requestDeindexing(slug);
         }
         break;
