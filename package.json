@@ -36,7 +36,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
-    "dinn-lexical": "git+https://github.com/dinn54/dinn-lexical.git#664540e4e1dbcec0cbc0ca8b1d2f2b58edfad9b8",
+    "dinn-lexical": "git+https://github.com/dinn54/dinn-lexical.git#b1794a6",
     "embla-carousel-react": "^8.6.0",
     "google-auth-library": "^10.5.0",
     "html-react-parser": "^5.2.17",
