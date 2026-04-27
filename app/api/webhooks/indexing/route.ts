@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requestIndexing, requestDeindexing } from "@/lib/google-indexing";
 import { pingSitemaps } from "@/lib/sitemap-ping";
+import { notifySlack } from "@/lib/slack";
 
 interface WebhookRecord {
   slug?: string;
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest) {
             requestIndexing(record.slug),
             pingSitemaps(),
           ]);
+          notifySlack(`인덱싱 요청 완료 (등록): /posts/${record.slug}`, "green");
         }
         break;
       }
@@ -48,8 +50,10 @@ export async function POST(request: NextRequest) {
             requestIndexing(slug),
             pingSitemaps(),
           ]);
+          notifySlack(`인덱싱 요청 완료 (수정): /posts/${slug}`, "yellow");
         } else if (oldStatus === "published" && newStatus !== "published") {
           await requestDeindexing(slug);
+          notifySlack(`인덱싱 제거 요청 완료: /posts/${slug}`, "red");
         }
         break;
       }
@@ -57,6 +61,7 @@ export async function POST(request: NextRequest) {
       case "DELETE": {
         if (old_record?.status === "published" && old_record.slug) {
           await requestDeindexing(old_record.slug);
+          notifySlack(`인덱싱 제거 요청 완료 (삭제): /posts/${old_record.slug}`, "red");
         }
         break;
       }
