@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import { auth } from "@/lib/auth";
-import { revalidateDinnDev } from "@/lib/dinn-revalidate";
+import { notifySlack } from "@/lib/slack";
 
 export async function PUT(
   request: NextRequest,
@@ -38,10 +38,10 @@ export async function PUT(
       );
     }
 
-    // Get current post to preserve published_at and detect slug changes
+    // Get current post to preserve published_at
     const { data: currentPosts } = await supabase
       .from("dinn_posts")
-      .select("published_at, slug")
+      .select("published_at")
       .eq("id", id);
 
     const currentPost = currentPosts?.[0];
@@ -134,13 +134,7 @@ export async function PUT(
     }
 
     revalidateTag("table:dinn_posts", { expire: 0 });
-    revalidateDinnDev({
-      type: "UPDATE",
-      record: { slug: post.slug, is_visible: post.is_visible ?? false },
-      ...(currentPost?.slug && currentPost.slug !== post.slug && {
-        old_record: { slug: currentPost.slug },
-      }),
-    });
+    notifySlack(`글 수정: ${post.title} (${getStatusFromPost(post)})`, "yellow");
     return NextResponse.json({ data: post, status: getStatusFromPost(post) });
   } catch (error) {
     console.error("Error in PUT /api/posts/[id]:", error);
@@ -163,10 +157,9 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    // Fetch slug before deletion for revalidation
     const { data: postToDelete } = await supabase
       .from("dinn_posts")
-      .select("slug")
+      .select("title")
       .eq("id", id)
       .single();
 
@@ -190,12 +183,7 @@ export async function DELETE(
     }
 
     revalidateTag("table:dinn_posts", { expire: 0 });
-    if (postToDelete?.slug) {
-      revalidateDinnDev({
-        type: "DELETE",
-        old_record: { slug: postToDelete.slug },
-      });
-    }
+    notifySlack(`글 삭제: ${postToDelete?.title ?? id}`, "red");
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error in DELETE /api/posts/[id]:", error);
