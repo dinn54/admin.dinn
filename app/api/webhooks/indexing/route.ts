@@ -5,7 +5,8 @@ import { notifySlack } from "@/lib/slack";
 
 interface WebhookRecord {
   slug?: string;
-  status?: string;
+  is_visible?: boolean | null;
+  published_at?: string | null;
 }
 
 interface WebhookPayload {
@@ -24,6 +25,14 @@ export async function POST(request: NextRequest) {
 
   const payload: WebhookPayload = await request.json();
   const { type, record, old_record } = payload;
+  const getPostStatus = (
+    value: WebhookRecord | null,
+  ): "draft" | "unlisted" | "published" | null => {
+    if (!value) return null;
+    if (value.is_visible) return "published";
+    if (value.published_at) return "unlisted";
+    return "draft";
+  };
 
   async function indexing(slug: string, action: "등록" | "수정") {
     try {
@@ -36,7 +45,10 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  async function deindexing(slug: string, action: "비공개" | "삭제") {
+  async function deindexing(
+    slug: string,
+    action: "비공개" | "삭제" | "슬러그 변경",
+  ) {
     try {
       await requestDeindexing(slug);
       notifySlack(`인덱싱 제거 완료 (${action}): /posts/${slug}`, "red");
@@ -49,29 +61,32 @@ export async function POST(request: NextRequest) {
 
   switch (type) {
     case "INSERT": {
-      if (record?.status === "published" && record.slug) {
+      if (getPostStatus(record) === "published" && record?.slug) {
         await indexing(record.slug, "등록");
       }
       break;
     }
 
     case "UPDATE": {
-      const newStatus = record?.status;
-      const oldStatus = old_record?.status;
-      const slug = record?.slug || old_record?.slug;
+      const newStatus = getPostStatus(record);
+      const oldStatus = getPostStatus(old_record);
+      const newSlug = record?.slug;
+      const oldSlug = old_record?.slug;
 
-      if (!slug) break;
+      if (oldStatus === "published" && oldSlug && newSlug && oldSlug !== newSlug) {
+        await deindexing(oldSlug, "슬러그 변경");
+      }
 
-      if (newStatus === "published") {
-        await indexing(slug, "수정");
-      } else if (oldStatus === "published" && newStatus !== "published") {
-        await deindexing(slug, "비공개");
+      if (newStatus === "published" && newSlug) {
+        await indexing(newSlug, oldStatus === "published" ? "수정" : "등록");
+      } else if (oldStatus === "published" && oldSlug) {
+        await deindexing(oldSlug, "비공개");
       }
       break;
     }
 
     case "DELETE": {
-      if (old_record?.status === "published" && old_record.slug) {
+      if (getPostStatus(old_record) === "published" && old_record?.slug) {
         await deindexing(old_record.slug, "삭제");
       }
       break;
