@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import { auth } from "@/lib/auth";
+import { revalidateDinnDev } from "@/lib/dinn-revalidate";
 
 export async function PUT(
   request: NextRequest,
@@ -37,10 +38,10 @@ export async function PUT(
       );
     }
 
-    // Get current post to preserve published_at if needed
+    // Get current post to preserve published_at and detect slug changes
     const { data: currentPosts } = await supabase
       .from("dinn_posts")
-      .select("published_at")
+      .select("published_at, slug")
       .eq("id", id);
 
     const currentPost = currentPosts?.[0];
@@ -133,6 +134,13 @@ export async function PUT(
     }
 
     revalidateTag("table:dinn_posts", { expire: 0 });
+    revalidateDinnDev({
+      type: "UPDATE",
+      record: { slug: post.slug, is_visible: post.is_visible ?? false },
+      ...(currentPost?.slug && currentPost.slug !== post.slug && {
+        old_record: { slug: currentPost.slug },
+      }),
+    });
     return NextResponse.json({ data: post, status: getStatusFromPost(post) });
   } catch (error) {
     console.error("Error in PUT /api/posts/[id]:", error);
@@ -155,6 +163,13 @@ export async function DELETE(
   try {
     const { id } = await params;
 
+    // Fetch slug before deletion for revalidation
+    const { data: postToDelete } = await supabase
+      .from("dinn_posts")
+      .select("slug")
+      .eq("id", id)
+      .single();
+
     // 태그 연결 먼저 삭제 (트리거가 count 감소시킴)
     await supabase
       .from("dinn_post_tags_connect")
@@ -175,6 +190,12 @@ export async function DELETE(
     }
 
     revalidateTag("table:dinn_posts", { expire: 0 });
+    if (postToDelete?.slug) {
+      revalidateDinnDev({
+        type: "DELETE",
+        old_record: { slug: postToDelete.slug },
+      });
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error in DELETE /api/posts/[id]:", error);

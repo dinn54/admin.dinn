@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import { auth } from "@/lib/auth";
+import { revalidateDinnDev } from "@/lib/dinn-revalidate";
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
     if (!title || !slug) {
       return NextResponse.json(
         { error: "제목과 슬러그는 필수입니다." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -70,22 +71,22 @@ export async function POST(request: NextRequest) {
       // Handle duplicate slug error
       if (error.code === "23505" && error.details?.includes("slug")) {
         return NextResponse.json(
-          { error: "이미 같은 제목의 게시글이 존재합니다. 다른 제목을 사용해주세요." },
-          { status: 409 }
+          {
+            error:
+              "이미 같은 제목의 게시글이 존재합니다. 다른 제목을 사용해주세요.",
+          },
+          { status: 409 },
         );
       }
 
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     const post = data?.[0];
     if (!post) {
       return NextResponse.json(
         { error: "게시글 생성에 실패했습니다." },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -95,17 +96,24 @@ export async function POST(request: NextRequest) {
     }
 
     revalidateTag("table:dinn_posts", { expire: 0 });
+    revalidateDinnDev({
+      type: "INSERT",
+      record: { slug: post.slug, is_visible: post.is_visible ?? false },
+    });
     return NextResponse.json({ data: post, status: getStatusFromPost(post) });
   } catch (error) {
     console.error("Error in POST /api/posts:", error);
     return NextResponse.json(
       { error: "서버 오류가 발생했습니다." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
-function getStatusFromPost(post: { is_visible: boolean | null; published_at: string | null }) {
+function getStatusFromPost(post: {
+  is_visible: boolean | null;
+  published_at: string | null;
+}) {
   if (post.is_visible) return "published";
   if (post.published_at) return "unlisted";
   return "draft";
@@ -120,21 +128,22 @@ async function syncPostTags(postId: string, tags: string[]) {
       .eq("post_id", postId);
 
     const existingTagNames = new Set(
-      existingConnections?.map((c: any) => c.dinn_post_tags?.name) || []
+      existingConnections?.map((c) => c.dinn_post_tags?.name) || [],
     );
     const newTagNames = new Set(tags);
 
     // 2. 삭제할 태그 연결 찾기
-    const tagsToRemove = existingConnections?.filter(
-      (c: any) => !newTagNames.has(c.dinn_post_tags?.name)
-    ) || [];
+    const tagsToRemove =
+      existingConnections?.filter(
+        (c) => !newTagNames.has(c.dinn_post_tags?.name),
+      ) || [];
 
     // 3. 추가할 태그 찾기
     const tagsToAdd = tags.filter((tag) => !existingTagNames.has(tag));
 
     // 4. 삭제할 연결 제거 (트리거가 count 감소시킴)
     if (tagsToRemove.length > 0) {
-      const tagIdsToRemove = tagsToRemove.map((c: any) => c.tag_id);
+      const tagIdsToRemove = tagsToRemove.map((c) => c.tag_id);
       await supabase
         .from("dinn_post_tags_connect")
         .delete()
