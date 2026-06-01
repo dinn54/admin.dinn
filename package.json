@@ -36,7 +36,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
-    "dinn-lexical": "git+https://github.com/dinn54/dinn-lexical.git#b1794a6",
+    "dinn-lexical": "github:dinn54/dinn-lexical#ab2be79",
     "embla-carousel-react": "^8.6.0",
     "google-auth-library": "^10.5.0",
     "html-react-parser": "^5.2.17",
@@ -58,6 +58,7 @@
     "recharts": "2.15.4",
     "refractor": "5",
     "shadcn": "^3.6.2",
+    "sharp": "^0.34.5",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
@@ -65,8 +66,8 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
     "@playwright/test": "^1.51.1",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

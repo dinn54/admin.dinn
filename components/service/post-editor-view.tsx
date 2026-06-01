@@ -27,6 +27,7 @@ import {
 import { toast } from "sonner";
 import { markdownToLexicalStateString } from "@/lib/markdownToLexicalState";
 import { isLexicalEditorStateString } from "@/lib/content-format";
+import { preprocessMarkdown } from "@/lib/preprocessMarkdown";
 
 export interface PostData {
   id?: string;
@@ -60,7 +61,7 @@ function toEditorStateString(content?: string): string {
   const rawContent = content || "";
   return isLexicalEditorStateString(rawContent)
     ? rawContent
-    : markdownToLexicalStateString(rawContent);
+    : markdownToLexicalStateString(preprocessMarkdown(rawContent));
 }
 
 const STATUS_CONFIG = {
@@ -107,6 +108,7 @@ export default function PostEditorView({
   const [readTime, setReadTime] = useState(0);
   const [author, setAuthor] = useState("dinn");
   const [postId, setPostId] = useState<string | undefined>(undefined);
+  const [draftId] = useState(() => crypto.randomUUID());
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -198,6 +200,7 @@ export default function PostEditorView({
       author_role: "Administrator",
       author_avatar: "",
       status: targetStatus,
+      draftId,
     };
 
     try {
@@ -228,6 +231,11 @@ export default function PostEditorView({
       // Update local state with returned data
       if (result.data?.id) {
         setPostId(result.data.id);
+      }
+      if (typeof result.data?.content === "string") {
+        setEditorContent(result.data.content);
+        setEditorInitialState(result.data.content);
+        setEditorKey((k) => k + 1);
       }
       setStatus(result.status || targetStatus);
 
@@ -391,6 +399,8 @@ export default function PostEditorView({
                   onChange={setEditorContent}
                   readOnly={false}
                   className="h-full bg-background"
+                  imageUploadDraftId={draftId}
+                  imageUploadPostId={postId}
                 />
               </div>
             </div>
@@ -443,7 +453,9 @@ export default function PostEditorView({
             </Button>
             <Button
               onClick={() => {
-                const nextEditorState = markdownToLexicalStateString(markdownInput);
+                const nextEditorState = markdownToLexicalStateString(
+                  preprocessMarkdown(markdownInput),
+                );
                 setEditorContent(nextEditorState);
                 setEditorInitialState(nextEditorState);
                 setEditorKey((k) => k + 1);

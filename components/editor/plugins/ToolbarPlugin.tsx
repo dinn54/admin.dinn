@@ -15,6 +15,7 @@ import {
   $getNodeByKey,
   $isElementNode,
   ElementFormatType,
+  type LexicalNode,
 } from "lexical";
 import { $isLinkNode, TOGGLE_LINK_COMMAND } from "@lexical/link";
 import {
@@ -55,7 +56,7 @@ import {
   AlignCenter,
   AlignRight,
   AlignJustify,
-  Image,
+  Image as ImageIcon,
   Youtube,
   Twitter,
   Plus,
@@ -86,8 +87,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../../ui/dialog";
-import { InsertDialog, InsertType } from "./insert-dialog";
-import { INSERT_IMAGE_COMMAND, $isImageNode } from "../nodes/ImageNode";
+import { InsertDialog, InsertDialogData, InsertType } from "./insert-dialog";
+import { INSERT_IMAGE_COMMAND } from "dinn-lexical/react";
+import { $isImageNode } from "../nodes/ImageNode";
 import { INSERT_TWEET_COMMAND, $isTweetNode } from "../nodes/TweetNode";
 import { $isYouTubeNode } from "../nodes/YouTubeNode";
 import { INSERT_YOUTUBE_COMMAND } from "./insert-plugin";
@@ -100,6 +102,20 @@ import {
 import { SET_SELECTED_TABLE_KEY_COMMAND } from "./table-block-selection";
 
 const LowPriority = 1;
+
+type AlignableMediaNode = LexicalNode & {
+  setFormat: (format: ElementFormatType) => void;
+};
+
+function isAlignableMediaNode(node: LexicalNode): node is AlignableMediaNode {
+  return (
+    (node.getType() === "image" ||
+      $isImageNode(node) ||
+      $isYouTubeNode(node) ||
+      $isTweetNode(node)) &&
+    typeof (node as Partial<AlignableMediaNode>).setFormat === "function"
+  );
+}
 
 // Helper function to extract YouTube video ID from URL
 function extractYouTubeVideoId(url: string): string | null {
@@ -145,7 +161,15 @@ const blockTypeToBlockName: Record<string, string> = {
   quote: "인용구",
 };
 
-export default function ToolbarPlugin() {
+type ToolbarPluginProps = {
+  imageUploadDraftId?: string;
+  imageUploadPostId?: string | null;
+};
+
+export default function ToolbarPlugin({
+  imageUploadDraftId,
+  imageUploadPostId,
+}: ToolbarPluginProps) {
   const [editor] = useLexicalComposerContext();
   const toolbarRef = useRef(null);
   const [canUndo, setCanUndo] = useState(false);
@@ -382,7 +406,7 @@ export default function ToolbarPlugin() {
         if (!$isNodeSelection(selection)) return;
 
         for (const node of selection.getNodes()) {
-          if ($isImageNode(node) || $isYouTubeNode(node) || $isTweetNode(node)) {
+          if (isAlignableMediaNode(node)) {
             node.setFormat(value);
             handledDecoratorNodes = true;
           }
@@ -458,13 +482,15 @@ export default function ToolbarPlugin() {
     setInsertDialogOpen(true);
   };
 
-  const handleInsertConfirm = (data: any) => {
+  const handleInsertConfirm = (data: InsertDialogData) => {
     switch (insertType) {
       case "image":
         if (data.src) {
           editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
             src: data.src,
             altText: data.altText || "",
+            width: data.width ?? undefined,
+            height: data.height ?? undefined,
           });
         }
         break;
@@ -676,7 +702,7 @@ export default function ToolbarPlugin() {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
           <DropdownMenuItem onClick={() => handleOpenInsertDialog("image")}>
-            <Image className="h-4 w-4 mr-2" />
+            <ImageIcon className="h-4 w-4 mr-2" />
             이미지
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleOpenInsertDialog("youtube")}>
@@ -696,6 +722,8 @@ export default function ToolbarPlugin() {
         onOpenChange={setInsertDialogOpen}
         type={insertType}
         onConfirm={handleInsertConfirm}
+        imageUploadDraftId={imageUploadDraftId}
+        imageUploadPostId={imageUploadPostId}
       />
       <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
         <DialogContent className="sm:max-w-sm">

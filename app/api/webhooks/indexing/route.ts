@@ -35,6 +35,8 @@ export async function POST(request: NextRequest) {
     if (value.published_at) return "unlisted";
     return "draft";
   };
+  const hasTempImages = (value: WebhookRecord | null) =>
+    typeof value?.content === "string" && value.content.includes("/posts/temp/");
 
   async function indexing(slug: string, action: "등록" | "수정") {
     try {
@@ -63,7 +65,11 @@ export async function POST(request: NextRequest) {
 
   switch (type) {
     case "INSERT": {
-      if (getPostStatus(record) === "published" && record?.slug) {
+      if (
+        getPostStatus(record) === "published" &&
+        record?.slug &&
+        !hasTempImages(record)
+      ) {
         await indexing(record.slug, "등록");
       }
       break;
@@ -74,6 +80,7 @@ export async function POST(request: NextRequest) {
       const oldStatus = getPostStatus(old_record);
       const newSlug = record?.slug;
       const oldSlug = old_record?.slug;
+      const oldHadTempImages = hasTempImages(old_record);
 
       // status, slug, title, content 변경이 없으면 무시 (view_count 등 무관한 필드 변경 제외)
       const significantChange =
@@ -84,12 +91,22 @@ export async function POST(request: NextRequest) {
 
       if (!significantChange) break;
 
+      if (hasTempImages(record)) {
+        if (oldStatus === "published" && newStatus !== "published" && oldSlug) {
+          await deindexing(oldSlug, "비공개");
+        }
+        break;
+      }
+
       if (oldStatus === "published" && oldSlug && newSlug && oldSlug !== newSlug) {
         await deindexing(oldSlug, "슬러그 변경");
       }
 
       if (newStatus === "published" && newSlug) {
-        await indexing(newSlug, oldStatus === "published" ? "수정" : "등록");
+        await indexing(
+          newSlug,
+          oldStatus === "published" && !oldHadTempImages ? "수정" : "등록",
+        );
       } else if (oldStatus === "published" && oldSlug) {
         await deindexing(oldSlug, "비공개");
       }

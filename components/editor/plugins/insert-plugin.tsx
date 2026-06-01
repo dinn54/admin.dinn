@@ -3,13 +3,11 @@ import {
   LexicalCommand,
   createCommand,
   COMMAND_PRIORITY_EDITOR,
-  $createParagraphNode,
 } from 'lexical';
 import { $insertNodeToNearestRoot } from '@lexical/utils';
 import { useEffect } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { INSERT_TWEET_COMMAND, $createTweetNode } from '../nodes/TweetNode';
-import { INSERT_IMAGE_COMMAND, $createImageNode, ImagePayload } from '../nodes/ImageNode';
 import { $createYouTubeNode } from '../nodes/YouTubeNode';
 
 // YouTube insert command
@@ -27,21 +25,6 @@ export function InsertPlugin() {
             (id: string) => {
                 editor.update(() => {
                     const node = $createTweetNode(id);
-                    $insertNodeToNearestRoot(node);
-                });
-                return true;
-            },
-            COMMAND_PRIORITY_EDITOR
-        );
-    }, [editor]);
-
-    // Image insert command
-    useEffect(() => {
-        return editor.registerCommand(
-            INSERT_IMAGE_COMMAND,
-            (payload: ImagePayload) => {
-                editor.update(() => {
-                    const node = $createImageNode(payload);
                     $insertNodeToNearestRoot(node);
                 });
                 return true;

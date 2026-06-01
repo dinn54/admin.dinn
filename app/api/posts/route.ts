@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import { auth } from "@/lib/auth";
 import { notifySlack } from "@/lib/slack";
+import { moveTempPostImages } from "@/lib/post-images";
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -25,6 +26,7 @@ export async function POST(request: NextRequest) {
       read_time,
       like_count,
       status, // 'draft' | 'unlisted' | 'published'
+      draftId,
     } = body;
 
     if (!title || !slug) {
@@ -82,12 +84,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const post = data?.[0];
+    let post = data?.[0];
     if (!post) {
       return NextResponse.json(
         { error: "게시글 생성에 실패했습니다." },
         { status: 500 },
       );
+    }
+
+    if (typeof content === "string" && typeof draftId === "string") {
+      const { content: committedContent, moved } = await moveTempPostImages({
+        content,
+        draftId,
+        postId: post.id,
+      });
+
+      if (moved > 0) {
+        const { data: updatedData, error: updateError } = await supabase
+          .from("dinn_posts")
+          .update({ content: committedContent })
+          .eq("id", post.id)
+          .select();
+
+        if (updateError) {
+          console.error("Error committing post image paths:", updateError);
+          return NextResponse.json(
+            { error: updateError.message },
+            { status: 500 },
+          );
+        }
+
+        post = updatedData?.[0] ?? post;
+      }
     }
 
     // 태그 연결 처리

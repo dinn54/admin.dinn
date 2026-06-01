@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/select";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { PlusSignIcon, Delete02Icon } from "@hugeicons/core-free-icons";
+import { toast } from "sonner";
+import { uploadPostImage } from "@/lib/post-image-upload-client";
 
 export type InsertType =
   | "youtube"
@@ -36,16 +38,37 @@ interface InsertDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   type: InsertType;
-  onConfirm: (data: any) => void;
+  onConfirm: (data: InsertDialogData) => void;
+  imageUploadDraftId?: string;
+  imageUploadPostId?: string | null;
 }
+
+export type InsertDialogData = {
+  src?: string;
+  altText?: string;
+  width?: number | null;
+  height?: number | null;
+  url?: string;
+  rows?: string;
+  columns?: string;
+  includeHeaders?: boolean;
+  question?: string;
+  options?: Array<{ text: string; uid: string; votes: number }>;
+  equation?: string;
+  inline?: boolean;
+  templateColumns?: string;
+};
 
 export function InsertDialog({
   open,
   onOpenChange,
   type,
   onConfirm,
+  imageUploadDraftId,
+  imageUploadPostId,
 }: InsertDialogProps) {
-  const [data, setData] = useState<any>({});
+  const [data, setData] = useState<InsertDialogData>({});
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -82,6 +105,40 @@ export function InsertDialog({
     onOpenChange(false);
   };
 
+  const handleImageFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !imageUploadDraftId) return;
+
+    setIsUploadingImage(true);
+    const toastId = toast.loading("이미지를 업로드하는 중입니다.");
+    try {
+      const uploaded = await uploadPostImage({
+        file,
+        draftId: imageUploadDraftId,
+        postId: imageUploadPostId,
+      });
+      setData((prev) => ({
+        ...prev,
+        src: uploaded.url,
+        altText: prev.altText || file.name,
+        width: uploaded.width ?? undefined,
+        height: uploaded.height ?? undefined,
+      }));
+      toast.success("이미지를 업로드했습니다.", { id: toastId });
+    } catch (error) {
+      console.error("Image file upload error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "이미지 업로드에 실패했습니다.",
+        { id: toastId },
+      );
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   const renderContent = () => {
     switch (type) {
       case "youtube":
@@ -101,6 +158,18 @@ export function InsertDialog({
       case "image":
         return (
           <div className="space-y-4">
+            {imageUploadDraftId ? (
+              <div className="space-y-2">
+                <Label htmlFor="image-file">Image File</Label>
+                <Input
+                  id="image-file"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  disabled={isUploadingImage}
+                  onChange={handleImageFileChange}
+                />
+              </div>
+            ) : null}
             <div className="space-y-2">
               <Label htmlFor="image-src">Image URL</Label>
               <Input
@@ -190,12 +259,12 @@ export function InsertDialog({
             </div>
             <div className="space-y-2">
               <Label>Options</Label>
-              {data.options?.map((option: any, index: number) => (
+              {data.options?.map((option, index: number) => (
                 <div key={index} className="flex gap-2">
                   <Input
                     value={option.text}
                     onChange={(e) => {
-                      const newOptions = [...data.options];
+                      const newOptions = [...(data.options ?? [])];
                       newOptions[index].text = e.target.value;
                       setData({ ...data, options: newOptions });
                     }}
@@ -206,10 +275,10 @@ export function InsertDialog({
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                        const newOptions = data.options.filter((_: any, i: number) => i !== index);
+                        const newOptions = data.options?.filter((_, i: number) => i !== index) ?? [];
                         setData({ ...data, options: newOptions });
                     }}
-                    disabled={data.options.length <= 2}
+                    disabled={(data.options?.length ?? 0) <= 2}
                   >
                     <HugeiconsIcon icon={Delete02Icon} className="w-4 h-4" />
                   </Button>
@@ -220,7 +289,7 @@ export function InsertDialog({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                   const newOptions = [...data.options, { text: "", uid: Date.now().toString(), votes: 0 }];
+                   const newOptions = [...(data.options ?? []), { text: "", uid: Date.now().toString(), votes: 0 }];
                    setData({ ...data, options: newOptions });
                 }}
                 className="w-full"
@@ -265,7 +334,7 @@ export function InsertDialog({
               <Select
                 value={data.templateColumns || "1fr 1fr"}
                 onValueChange={(value) =>
-                  setData({ ...data, templateColumns: value })
+                  setData({ ...data, templateColumns: value ?? undefined })
                 }
               >
                 <SelectTrigger>
@@ -314,7 +383,9 @@ export function InsertDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">Insert</Button>
+            <Button type="submit" disabled={isUploadingImage}>
+              {isUploadingImage ? "Uploading..." : "Insert"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
