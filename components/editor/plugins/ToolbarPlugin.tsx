@@ -88,7 +88,7 @@ import {
   DialogTitle,
 } from "../../ui/dialog";
 import { InsertDialog, InsertDialogData, InsertType } from "./insert-dialog";
-import { INSERT_IMAGE_COMMAND } from "dinn-lexical/react";
+import { INSERT_IMAGE_COMMAND, UPLOAD_IMAGE_FILES_COMMAND } from "dinn-lexical/react";
 import { $isImageNode } from "../nodes/ImageNode";
 import { INSERT_TWEET_COMMAND, $isTweetNode } from "../nodes/TweetNode";
 import { $isYouTubeNode } from "../nodes/YouTubeNode";
@@ -722,8 +722,16 @@ export default function ToolbarPlugin({
         onOpenChange={setInsertDialogOpen}
         type={insertType}
         onConfirm={handleInsertConfirm}
-        imageUploadDraftId={imageUploadDraftId}
-        imageUploadPostId={imageUploadPostId}
+        onImageFileSelect={
+          imageUploadDraftId
+            ? (file) => {
+                editor.dispatchCommand(UPLOAD_IMAGE_FILES_COMMAND, {
+                  files: [file],
+                  source: "file-dialog",
+                });
+              }
+            : undefined
+        }
       />
       <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
         <DialogContent className="sm:max-w-sm">

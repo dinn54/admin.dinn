@@ -21,8 +21,6 @@ import {
 } from "@/components/ui/select";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { PlusSignIcon, Delete02Icon } from "@hugeicons/core-free-icons";
-import { toast } from "sonner";
-import { uploadPostImage } from "@/lib/post-image-upload-client";
 
 export type InsertType =
   | "youtube"
@@ -39,8 +37,7 @@ interface InsertDialogProps {
   onOpenChange: (open: boolean) => void;
   type: InsertType;
   onConfirm: (data: InsertDialogData) => void;
-  imageUploadDraftId?: string;
-  imageUploadPostId?: string | null;
+  onImageFileSelect?: (file: File) => void;
 }
 
 export type InsertDialogData = {
@@ -64,11 +61,9 @@ export function InsertDialog({
   onOpenChange,
   type,
   onConfirm,
-  imageUploadDraftId,
-  imageUploadPostId,
+  onImageFileSelect,
 }: InsertDialogProps) {
   const [data, setData] = useState<InsertDialogData>({});
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -110,33 +105,10 @@ export function InsertDialog({
   ) => {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file || !imageUploadDraftId) return;
+    if (!file) return;
 
-    setIsUploadingImage(true);
-    const toastId = toast.loading("이미지를 업로드하는 중입니다.");
-    try {
-      const uploaded = await uploadPostImage({
-        file,
-        draftId: imageUploadDraftId,
-        postId: imageUploadPostId,
-      });
-      setData((prev) => ({
-        ...prev,
-        src: uploaded.url,
-        altText: prev.altText || file.name,
-        width: uploaded.width ?? undefined,
-        height: uploaded.height ?? undefined,
-      }));
-      toast.success("이미지를 업로드했습니다.", { id: toastId });
-    } catch (error) {
-      console.error("Image file upload error:", error);
-      toast.error(
-        error instanceof Error ? error.message : "이미지 업로드에 실패했습니다.",
-        { id: toastId },
-      );
-    } finally {
-      setIsUploadingImage(false);
-    }
+    onImageFileSelect?.(file);
+    onOpenChange(false);
   };
 
   const renderContent = () => {
@@ -158,14 +130,13 @@ export function InsertDialog({
       case "image":
         return (
           <div className="space-y-4">
-            {imageUploadDraftId ? (
+            {onImageFileSelect ? (
               <div className="space-y-2">
                 <Label htmlFor="image-file">Image File</Label>
                 <Input
                   id="image-file"
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
-                  disabled={isUploadingImage}
                   onChange={handleImageFileChange}
                 />
               </div>
@@ -383,9 +354,7 @@ export function InsertDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isUploadingImage}>
-              {isUploadingImage ? "Uploading..." : "Insert"}
-            </Button>
+            <Button type="submit">Insert</Button>
           </DialogFooter>
         </form>
       </DialogContent>
