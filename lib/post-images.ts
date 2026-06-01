@@ -196,14 +196,32 @@ export async function moveTempPostImages({
 
   collect(parsed);
 
-  for (const [sourcePath, targetPath] of pathsToMove) {
-    const { error } = await supabase.storage
-      .from(POST_IMAGE_BUCKET)
-      .move(sourcePath, targetPath);
+  const movedPaths: Array<{ sourcePath: string; targetPath: string }> = [];
 
-    if (error) {
-      throw new Error(error.message);
+  try {
+    for (const [sourcePath, targetPath] of pathsToMove) {
+      const { error } = await supabase.storage
+        .from(POST_IMAGE_BUCKET)
+        .move(sourcePath, targetPath);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      movedPaths.push({ sourcePath, targetPath });
     }
+  } catch (error) {
+    for (const { sourcePath, targetPath } of movedPaths.reverse()) {
+      const { error: rollbackError } = await supabase.storage
+        .from(POST_IMAGE_BUCKET)
+        .move(targetPath, sourcePath);
+
+      if (rollbackError) {
+        console.error("Failed to rollback moved post image:", rollbackError);
+      }
+    }
+
+    throw error;
   }
 
   if (replacements.size === 0) {
