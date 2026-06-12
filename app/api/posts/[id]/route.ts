@@ -38,10 +38,10 @@ export async function PUT(
       );
     }
 
-    // Get current post to preserve published_at
+    // Get current post to preserve published_at and describe status transitions.
     const { data: currentPosts } = await supabase
       .from("dinn_posts")
-      .select("published_at")
+      .select("title, slug, is_visible, published_at")
       .eq("id", id);
 
     const currentPost = currentPosts?.[0];
@@ -67,7 +67,7 @@ export async function PUT(
       published_at = null; // Reset to draft
     }
 
-    const updateData: Record<string, any> = {
+    const updateData: Record<string, unknown> = {
       title,
       description: subtitle,
       content,
@@ -134,17 +134,24 @@ export async function PUT(
     }
 
     revalidateTag("table:dinn_posts", { expire: 0 });
+    const oldStatus = currentPost ? getStatusFromPost(currentPost) : null;
+    const newStatus = getStatusFromPost(post);
     notify({
-      title: "글 수정",
-      icon: "✏️",
+      title: getUpdateNotificationTitle(oldStatus, newStatus),
+      icon: getUpdateNotificationIcon(oldStatus, newStatus),
       message: post.title,
       level: "success",
       fields: [
-        { name: "상태", value: getStatusFromPost(post), inline: true },
-        { name: "슬러그", value: post.slug ?? "-", inline: true },
+        {
+          name: "상태",
+          value: formatStatusChange(oldStatus, newStatus),
+          inline: true,
+        },
+        { name: "경로", value: getPostPath(post.slug), inline: false },
+        { name: "Post ID", value: post.id, inline: false },
       ],
     });
-    return NextResponse.json({ data: post, status: getStatusFromPost(post) });
+    return NextResponse.json({ data: post, status: newStatus });
   } catch (error) {
     console.error("Error in PUT /api/posts/[id]:", error);
     return NextResponse.json(
@@ -168,7 +175,7 @@ export async function DELETE(
 
     const { data: postToDelete } = await supabase
       .from("dinn_posts")
-      .select("title")
+      .select("title, slug, is_visible, published_at")
       .eq("id", id)
       .single();
 
@@ -193,11 +200,23 @@ export async function DELETE(
 
     revalidateTag("table:dinn_posts", { expire: 0 });
     notify({
-      title: "글 삭제",
+      title: "글 삭제 완료",
       icon: "🗑️",
       message: postToDelete?.title ?? id,
       level: "success",
-      fields: [{ name: "Post ID", value: id, inline: false }],
+      fields: [
+        {
+          name: "상태",
+          value: postToDelete ? getStatusFromPost(postToDelete) : "-",
+          inline: true,
+        },
+        {
+          name: "경로",
+          value: getPostPath(postToDelete?.slug ?? null),
+          inline: false,
+        },
+        { name: "Post ID", value: id, inline: false },
+      ],
     });
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -209,10 +228,58 @@ export async function DELETE(
   }
 }
 
-function getStatusFromPost(post: { is_visible: boolean | null; published_at: string | null }) {
+type PostStatus = "draft" | "unlisted" | "published";
+
+function getStatusFromPost(post: {
+  is_visible: boolean | null;
+  published_at: string | null;
+}): PostStatus {
   if (post.is_visible) return "published";
   if (post.published_at) return "unlisted";
   return "draft";
+}
+
+function getUpdateNotificationTitle(
+  oldStatus: PostStatus | null,
+  newStatus: PostStatus,
+) {
+  if (oldStatus !== "published" && newStatus === "published") {
+    return "글 출간 완료";
+  }
+  if (oldStatus === "published" && newStatus === "unlisted") {
+    return "글 숨김 완료";
+  }
+  if (oldStatus === "published" && newStatus === "draft") {
+    return "글 초안 전환 완료";
+  }
+  if (oldStatus === "draft" && newStatus === "unlisted") {
+    return "숨김 글 등록 완료";
+  }
+  if (oldStatus === "unlisted" && newStatus === "draft") {
+    return "숨김 글 초안 전환 완료";
+  }
+  return "글 수정 완료";
+}
+
+function getUpdateNotificationIcon(
+  oldStatus: PostStatus | null,
+  newStatus: PostStatus,
+) {
+  if (oldStatus !== "published" && newStatus === "published") return "🚀";
+  if (oldStatus === "published" && newStatus !== "published") return "🙈";
+  return "✏️";
+}
+
+function formatStatusChange(
+  oldStatus: PostStatus | null,
+  newStatus: PostStatus,
+) {
+  if (!oldStatus || oldStatus === newStatus) return newStatus;
+  return `${oldStatus} → ${newStatus}`;
+}
+
+function getPostPath(slug: string | null) {
+  return slug ? `/posts/${slug}` : "-";
 }
 
 async function syncPostTags(postId: string, tags: string[]) {
@@ -223,22 +290,31 @@ async function syncPostTags(postId: string, tags: string[]) {
       .select("tag_id, dinn_post_tags(name)")
       .eq("post_id", postId);
 
+    type PostTagConnection = {
+      tag_id: string;
+      dinn_post_tags?: { name?: string | null } | null;
+    };
+
+    const connections = (existingConnections ?? []) as PostTagConnection[];
     const existingTagNames = new Set(
-      existingConnections?.map((c: any) => c.dinn_post_tags?.name) || []
+      connections
+        .map((connection) => connection.dinn_post_tags?.name)
+        .filter((name): name is string => typeof name === "string"),
     );
     const newTagNames = new Set(tags);
 
     // 2. 삭제할 태그 연결 찾기
-    const tagsToRemove = existingConnections?.filter(
-      (c: any) => !newTagNames.has(c.dinn_post_tags?.name)
-    ) || [];
+    const tagsToRemove = connections.filter((connection) => {
+      const name = connection.dinn_post_tags?.name;
+      return typeof name === "string" && !newTagNames.has(name);
+    });
 
     // 3. 추가할 태그 찾기
     const tagsToAdd = tags.filter((tag) => !existingTagNames.has(tag));
 
     // 4. 삭제할 연결 제거 (트리거가 count 감소시킴)
     if (tagsToRemove.length > 0) {
-      const tagIdsToRemove = tagsToRemove.map((c: any) => c.tag_id);
+      const tagIdsToRemove = tagsToRemove.map((connection) => connection.tag_id);
       await supabase
         .from("dinn_post_tags_connect")
         .delete()

@@ -18,6 +18,10 @@ interface WebhookPayload {
   old_record: WebhookRecord | null;
 }
 
+type PostStatus = "draft" | "unlisted" | "published";
+type IndexingUpdateReason = "글 등록" | "글 수정" | "글 출간";
+type IndexingDeleteReason = "글 비공개" | "글 삭제" | "슬러그 변경";
+
 export async function POST(request: NextRequest) {
   // Verify webhook secret
   const secret = request.headers.get("x-webhook-secret");
@@ -29,7 +33,7 @@ export async function POST(request: NextRequest) {
   const { type, record, old_record } = payload;
   const getPostStatus = (
     value: WebhookRecord | null,
-  ): "draft" | "unlisted" | "published" | null => {
+  ): PostStatus | null => {
     if (!value) return null;
     if (value.is_visible) return "published";
     if (value.published_at) return "unlisted";
@@ -38,50 +42,71 @@ export async function POST(request: NextRequest) {
   const hasTempImages = (value: WebhookRecord | null) =>
     typeof value?.content === "string" && value.content.includes("/posts/temp/");
 
-  async function indexing(slug: string, action: "등록" | "수정") {
+  async function indexing(slug: string, reason: IndexingUpdateReason) {
     try {
       await Promise.all([requestIndexing(slug), pingSitemaps()]);
       notify({
-        title: `인덱싱 요청 완료 (${action})`,
+        title: `인덱싱 ${getIndexingActionLabel(reason)} 요청 완료`,
         icon: "🔎",
-        message: `/posts/${slug}`,
+        message: getPostPath(slug),
         level: "success",
+        fields: [
+          { name: "요청 타입", value: "URL_UPDATED", inline: true },
+          { name: "원인", value: reason, inline: true },
+          { name: "경로", value: getPostPath(slug), inline: false },
+          { name: "Sitemap", value: "ping 완료", inline: true },
+        ],
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       notify({
-        title: `인덱싱 요청 실패 (${action})`,
+        title: `인덱싱 ${getIndexingActionLabel(reason)} 요청 실패`,
         icon: "🔎",
-        message,
+        message: getPostPath(slug),
         level: "error",
-        fields: [{ name: "경로", value: `/posts/${slug}`, inline: false }],
+        fields: [
+          { name: "요청 타입", value: "URL_UPDATED", inline: true },
+          { name: "원인", value: reason, inline: true },
+          { name: "경로", value: getPostPath(slug), inline: false },
+          { name: "오류", value: message, inline: false },
+        ],
       });
-      console.error(`[Google Indexing] 실패 (${action}):`, error);
+      console.error(`[Google Indexing] 실패 (${reason}):`, error);
     }
   }
 
   async function deindexing(
     slug: string,
-    action: "비공개" | "삭제" | "슬러그 변경",
+    reason: IndexingDeleteReason,
   ) {
     try {
       await requestDeindexing(slug);
       notify({
-        title: `인덱싱 제거 완료 (${action})`,
-        icon: "🗑️",
-        message: `/posts/${slug}`,
+        title: `인덱싱 삭제 요청 완료`,
+        icon: "🧹",
+        message: getPostPath(slug),
         level: "success",
+        fields: [
+          { name: "요청 타입", value: "URL_DELETED", inline: true },
+          { name: "원인", value: reason, inline: true },
+          { name: "경로", value: getPostPath(slug), inline: false },
+        ],
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       notify({
-        title: `인덱싱 제거 실패 (${action})`,
-        icon: "🗑️",
-        message,
+        title: `인덱싱 삭제 요청 실패`,
+        icon: "🧹",
+        message: getPostPath(slug),
         level: "error",
-        fields: [{ name: "경로", value: `/posts/${slug}`, inline: false }],
+        fields: [
+          { name: "요청 타입", value: "URL_DELETED", inline: true },
+          { name: "원인", value: reason, inline: true },
+          { name: "경로", value: getPostPath(slug), inline: false },
+          { name: "오류", value: message, inline: false },
+        ],
       });
-      console.error(`[Google Indexing] 제거 실패 (${action}):`, error);
+      console.error(`[Google Indexing] 제거 실패 (${reason}):`, error);
     }
   }
 
@@ -92,7 +117,7 @@ export async function POST(request: NextRequest) {
         record?.slug &&
         !hasTempImages(record)
       ) {
-        await indexing(record.slug, "등록");
+        await indexing(record.slug, "글 등록");
       }
       break;
     }
@@ -115,7 +140,7 @@ export async function POST(request: NextRequest) {
 
       if (hasTempImages(record)) {
         if (oldStatus === "published" && newStatus !== "published" && oldSlug) {
-          await deindexing(oldSlug, "비공개");
+          await deindexing(oldSlug, "글 비공개");
         }
         break;
       }
@@ -127,21 +152,39 @@ export async function POST(request: NextRequest) {
       if (newStatus === "published" && newSlug) {
         await indexing(
           newSlug,
-          oldStatus === "published" && !oldHadTempImages ? "수정" : "등록",
+          getUpdateIndexingReason(oldStatus, oldHadTempImages),
         );
       } else if (oldStatus === "published" && oldSlug) {
-        await deindexing(oldSlug, "비공개");
+        await deindexing(oldSlug, "글 비공개");
       }
       break;
     }
 
     case "DELETE": {
       if (getPostStatus(old_record) === "published" && old_record?.slug) {
-        await deindexing(old_record.slug, "삭제");
+        await deindexing(old_record.slug, "글 삭제");
       }
       break;
     }
   }
 
   return NextResponse.json({ success: true });
+}
+
+function getPostPath(slug: string) {
+  return `/posts/${slug}`;
+}
+
+function getUpdateIndexingReason(
+  oldStatus: PostStatus | null,
+  oldHadTempImages: boolean,
+): IndexingUpdateReason {
+  if (oldStatus === "published" && !oldHadTempImages) return "글 수정";
+  return "글 출간";
+}
+
+function getIndexingActionLabel(reason: IndexingUpdateReason) {
+  if (reason === "글 등록") return "등록";
+  if (reason === "글 수정") return "수정";
+  return "출간";
 }

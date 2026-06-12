@@ -22,9 +22,9 @@ interface NotificationChannel {
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 
 const LEVEL_META: Record<NotificationLevel, { color: number; label: string }> = {
-  success: { color: 0x22c55e, label: "완료" },
-  warning: { color: 0xf2c744, label: "주의" },
-  error: { color: 0xef4444, label: "실패" },
+  success: { color: 0x22c55e, label: "✅" },
+  warning: { color: 0xf2c744, label: "⚠️" },
+  error: { color: 0xef4444, label: "❌" },
 };
 
 const channels: NotificationChannel[] = [
@@ -40,10 +40,11 @@ const channels: NotificationChannel[] = [
         body: JSON.stringify({
           embeds: [
             {
-              title: `${meta.label}: ${payload.icon ? `${payload.icon} ` : ""}${payload.title}`,
+              title: `${meta.label} ${payload.icon ? `${payload.icon} ` : ""}${payload.title}`,
               description: payload.message,
               color: meta.color,
               fields: payload.fields,
+              timestamp: new Date().toISOString(),
             },
           ],
         }),

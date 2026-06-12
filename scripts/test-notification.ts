@@ -9,7 +9,18 @@ if (!DISCORD_WEBHOOK_URL) {
   process.exit(1);
 }
 
-async function send(title: string, description: string, color: number) {
+interface TestField {
+  name: string;
+  value: string;
+  inline?: boolean;
+}
+
+async function send(
+  title: string,
+  description: string,
+  color: number,
+  fields: TestField[],
+) {
   const res = await fetch(DISCORD_WEBHOOK_URL!, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -19,10 +30,8 @@ async function send(title: string, description: string, color: number) {
           title,
           description,
           color,
-          fields: [
-            { name: "브랜치", value: "local", inline: true },
-            { name: "실행자", value: "notification-test", inline: true },
-          ],
+          fields,
+          timestamp: new Date().toISOString(),
         },
       ],
     }),
@@ -33,10 +42,37 @@ async function send(title: string, description: string, color: number) {
 
 async function main() {
   console.log("Discord 테스트 알림 전송 중...\n");
-  await send("완료: 📄 글 등록", "테스트 포스트 (published)", 0x22c55e);
-  await send("완료: ✏️ 글 수정", "테스트 포스트 (published)", 0x22c55e);
-  await send("완료: 🗑️ 글 삭제", "테스트 포스트", 0x22c55e);
-  await send("실패: 🔎 인덱싱 요청 실패", "/posts/test\nPermission denied", 0xef4444);
+  await send("✅ 🚀 글 출간 완료", "테스트 포스트", 0x22c55e, [
+    { name: "상태", value: "draft → published", inline: true },
+    { name: "경로", value: "/posts/test", inline: false },
+    { name: "Post ID", value: "notification-test", inline: false },
+  ]);
+  await send("✅ 🙈 숨김 글 등록 완료", "테스트 포스트", 0x22c55e, [
+    { name: "상태", value: "unlisted", inline: true },
+    { name: "경로", value: "/posts/test", inline: false },
+    { name: "Post ID", value: "notification-test", inline: false },
+  ]);
+  await send("✅ 📝 초안 저장 완료", "테스트 포스트", 0x22c55e, [
+    { name: "상태", value: "draft", inline: true },
+    { name: "경로", value: "/posts/test", inline: false },
+    { name: "Post ID", value: "notification-test", inline: false },
+  ]);
+  await send("✅ ✏️ 글 수정 완료", "테스트 포스트", 0x22c55e, [
+    { name: "상태", value: "published", inline: true },
+    { name: "경로", value: "/posts/test", inline: false },
+    { name: "Post ID", value: "notification-test", inline: false },
+  ]);
+  await send("✅ 🗑️ 글 삭제 완료", "테스트 포스트", 0x22c55e, [
+    { name: "상태", value: "published", inline: true },
+    { name: "경로", value: "/posts/test", inline: false },
+    { name: "Post ID", value: "notification-test", inline: false },
+  ]);
+  await send("❌ 🔎 인덱싱 수정 요청 실패", "/posts/test", 0xef4444, [
+    { name: "요청 타입", value: "URL_UPDATED", inline: true },
+    { name: "원인", value: "글 수정", inline: true },
+    { name: "경로", value: "/posts/test", inline: false },
+    { name: "오류", value: "Permission denied", inline: false },
+  ]);
   console.log("\n완료");
 }
 

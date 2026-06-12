@@ -125,13 +125,14 @@ export async function POST(request: NextRequest) {
 
     revalidateTag("table:dinn_posts", { expire: 0 });
     notify({
-      title: "글 등록",
-      icon: "📄",
+      title: getCreateNotificationTitle(post),
+      icon: getCreateNotificationIcon(post),
       message: post.title,
       level: "success",
       fields: [
         { name: "상태", value: getStatusFromPost(post), inline: true },
-        { name: "슬러그", value: post.slug ?? "-", inline: true },
+        { name: "경로", value: getPostPath(post.slug), inline: false },
+        { name: "Post ID", value: post.id, inline: false },
       ],
     });
     return NextResponse.json({ data: post, status: getStatusFromPost(post) });
@@ -151,6 +152,30 @@ function getStatusFromPost(post: {
   if (post.is_visible) return "published";
   if (post.published_at) return "unlisted";
   return "draft";
+}
+
+function getCreateNotificationTitle(post: {
+  is_visible: boolean | null;
+  published_at: string | null;
+}) {
+  const status = getStatusFromPost(post);
+  if (status === "published") return "글 출간 완료";
+  if (status === "unlisted") return "숨김 글 등록 완료";
+  return "초안 저장 완료";
+}
+
+function getCreateNotificationIcon(post: {
+  is_visible: boolean | null;
+  published_at: string | null;
+}) {
+  const status = getStatusFromPost(post);
+  if (status === "published") return "🚀";
+  if (status === "unlisted") return "🙈";
+  return "📝";
+}
+
+function getPostPath(slug: string | null) {
+  return slug ? `/posts/${slug}` : "-";
 }
 
 async function syncPostTags(postId: string, tags: string[]) {
