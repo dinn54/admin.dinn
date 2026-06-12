@@ -56,7 +56,7 @@ jobs:
           run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
           payload="$(jq -n \
-            --arg title "프로덕션 배포 성공" \
+            --arg title "🚀 프로덕션 배포 성공" \
             --arg description "admin.dinn production 배포가 완료됐습니다." \
             --arg deployment "$DEPLOY_URL" \
             --arg branch "$GITHUB_REF_NAME" \
@@ -94,7 +94,7 @@ jobs:
           run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
           payload="$(jq -n \
-            --arg title "프로덕션 배포 실패" \
+            --arg title "🚀 프로덕션 배포 실패" \
             --arg description "admin.dinn production 배포가 실패했습니다. Actions 로그에서 실패한 step을 확인해야 합니다." \
             --arg branch "$GITHUB_REF_NAME" \
             --arg commit "$short_sha - $commit_message" \
