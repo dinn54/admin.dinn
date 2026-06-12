@@ -126,6 +126,7 @@ export async function POST(request: NextRequest) {
     revalidateTag("table:dinn_posts", { expire: 0 });
     notify({
       title: "글 등록",
+      icon: "📄",
       message: post.title,
       level: "success",
       fields: [

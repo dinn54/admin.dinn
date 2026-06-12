@@ -43,13 +43,15 @@ export async function POST(request: NextRequest) {
       await Promise.all([requestIndexing(slug), pingSitemaps()]);
       notify({
         title: `인덱싱 요청 완료 (${action})`,
+        icon: "🔎",
         message: `/posts/${slug}`,
-        level: action === "등록" ? "success" : "warning",
+        level: "success",
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       notify({
         title: `인덱싱 요청 실패 (${action})`,
+        icon: "🔎",
         message,
         level: "error",
         fields: [{ name: "경로", value: `/posts/${slug}`, inline: false }],
@@ -66,6 +68,7 @@ export async function POST(request: NextRequest) {
       await requestDeindexing(slug);
       notify({
         title: `인덱싱 제거 완료 (${action})`,
+        icon: "🗑️",
         message: `/posts/${slug}`,
         level: "success",
       });
@@ -73,6 +76,7 @@ export async function POST(request: NextRequest) {
       const message = error instanceof Error ? error.message : String(error);
       notify({
         title: `인덱싱 제거 실패 (${action})`,
+        icon: "🗑️",
         message,
         level: "error",
         fields: [{ name: "경로", value: `/posts/${slug}`, inline: false }],

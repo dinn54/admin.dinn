@@ -33,9 +33,10 @@ async function send(title: string, description: string, color: number) {
 
 async function main() {
   console.log("Discord 테스트 알림 전송 중...\n");
-  await send("성공: 글 등록", "테스트 포스트 (published)", 0x22c55e);
-  await send("주의: 글 수정", "테스트 포스트 (published)", 0xf2c744);
-  await send("실패: 인덱싱 요청 실패", "/posts/test\nPermission denied", 0xef4444);
+  await send("완료: 📄 글 등록", "테스트 포스트 (published)", 0x22c55e);
+  await send("완료: ✏️ 글 수정", "테스트 포스트 (published)", 0x22c55e);
+  await send("완료: 🗑️ 글 삭제", "테스트 포스트", 0x22c55e);
+  await send("실패: 🔎 인덱싱 요청 실패", "/posts/test\nPermission denied", 0xef4444);
   console.log("\n완료");
 }
 

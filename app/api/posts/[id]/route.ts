@@ -136,8 +136,9 @@ export async function PUT(
     revalidateTag("table:dinn_posts", { expire: 0 });
     notify({
       title: "글 수정",
+      icon: "✏️",
       message: post.title,
-      level: "warning",
+      level: "success",
       fields: [
         { name: "상태", value: getStatusFromPost(post), inline: true },
         { name: "슬러그", value: post.slug ?? "-", inline: true },
@@ -193,6 +194,7 @@ export async function DELETE(
     revalidateTag("table:dinn_posts", { expire: 0 });
     notify({
       title: "글 삭제",
+      icon: "🗑️",
       message: postToDelete?.title ?? id,
       level: "success",
       fields: [{ name: "Post ID", value: id, inline: false }],

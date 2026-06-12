@@ -8,6 +8,7 @@ interface NotificationField {
 
 interface NotificationPayload {
   title: string;
+  icon?: string;
   message?: string;
   level: NotificationLevel;
   fields?: NotificationField[];
@@ -39,7 +40,7 @@ const channels: NotificationChannel[] = [
         body: JSON.stringify({
           embeds: [
             {
-              title: `${meta.label}: ${payload.title}`,
+              title: `${meta.label}: ${payload.icon ? `${payload.icon} ` : ""}${payload.title}`,
               description: payload.message,
               color: meta.color,
               fields: payload.fields,
