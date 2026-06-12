@@ -54,6 +54,7 @@ export interface BlogPost {
   updatedAt: string;
   createdAt?: string; // Add optional createdAt
   likes: number;
+  views?: number;
 }
 
 interface BlogPostTableProps {
@@ -88,6 +89,9 @@ export function BlogPostTable({
               <TableHead>상태</TableHead>
               <TableHead>작성자</TableHead>
               <TableHead className="w-[100px]">생성일</TableHead>
+              <TableHead className="hidden xl:table-cell w-[80px]">
+                조회수
+              </TableHead>
               <TableHead className="hidden xl:table-cell w-[80px]">
                 좋아요
               </TableHead>
@@ -153,7 +157,10 @@ export function BlogPostTable({
                   {post.createdAt || "-"}
                 </TableCell>
                 <TableCell className="hidden xl:table-cell text-sm text-muted-foreground tabular-nums whitespace-nowrap pl-4">
-                  {post.likes}
+                  {(post.views ?? 0).toLocaleString()}
+                </TableCell>
+                <TableCell className="hidden xl:table-cell text-sm text-muted-foreground tabular-nums whitespace-nowrap pl-4">
+                  {post.likes.toLocaleString()}
                 </TableCell>
                 <TableCell className="hidden xl:table-cell">
                   <div className="flex flex-wrap gap-1 items-center">
@@ -211,7 +218,7 @@ export function BlogPostTable({
             {currentPosts.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={8}
+                  colSpan={9}
                   className="h-32 text-center text-muted-foreground"
                 >
                   게시글이 없습니다.

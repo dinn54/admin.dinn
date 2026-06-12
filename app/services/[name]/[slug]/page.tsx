@@ -67,6 +67,7 @@ export default async function ServiceFeaturePage({
         ? new Date(item.created_at).toISOString().split("T")[0]
         : "",
       likes: item.like_count || 0,
+      views: item.view_count || 0,
     }));
     componentProps = { initialData: formattedPosts };
   } else if (

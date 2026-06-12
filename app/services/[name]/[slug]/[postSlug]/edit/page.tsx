@@ -64,6 +64,7 @@ export default async function EditPostPage({
       ? new Date(rawPost.updated_at).toISOString().split("T")[0]
       : "",
     likes: rawPost.like_count || 0,
+    views: rawPost.view_count || 0,
   };
 
   const returnUrl = `/services/${encodeURIComponent(name)}/${slug}`;

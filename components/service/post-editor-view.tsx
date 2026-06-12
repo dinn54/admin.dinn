@@ -46,6 +46,7 @@ export interface PostData {
   createdAt?: string;
   updatedAt?: string;
   likes?: number;
+  views?: number;
 }
 
 interface PostEditorViewProps {
@@ -281,11 +282,20 @@ export default function PostEditorView({
         />
       </div>
       <div className="space-y-3">
+        <Label>조회수</Label>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted text-muted-foreground">
+          <Eye className="w-4 h-4" />
+          <span className="text-sm font-medium tabular-nums">
+            {(initialData?.views ?? 0).toLocaleString()}
+          </span>
+        </div>
+      </div>
+      <div className="space-y-3">
         <Label>좋아요</Label>
         <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted text-muted-foreground">
           <ThumbsUp className="w-4 h-4" />
           <span className="text-sm font-medium tabular-nums">
-            {initialData?.likes ?? 0}
+            {(initialData?.likes ?? 0).toLocaleString()}
           </span>
         </div>
       </div>
