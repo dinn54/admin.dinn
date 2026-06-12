@@ -76,8 +76,7 @@ export async function POST(request: NextRequest) {
       if (error.code === "23505" && error.details?.includes("slug")) {
         return NextResponse.json(
           {
-            error:
-              "이미 같은 제목의 게시글이 존재합니다. 다른 제목을 사용해주세요.",
+            error: `같은 URL 경로를 사용하는 게시글이 이미 존재합니다. 제목을 다르게 입력해주세요. 생성된 경로: ${getPostPath(slug)}`,
           },
           { status: 409 },
         );
