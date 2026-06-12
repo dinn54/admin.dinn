@@ -146,7 +146,15 @@ export async function POST(request: NextRequest) {
       }
 
       if (oldStatus === "published" && oldSlug && newSlug && oldSlug !== newSlug) {
-        await deindexing(oldSlug, "슬러그 변경");
+        if (newStatus === "published") {
+          await Promise.allSettled([
+            deindexing(oldSlug, "슬러그 변경"),
+            indexing(newSlug, getUpdateIndexingReason(oldStatus, oldHadTempImages)),
+          ]);
+        } else {
+          await deindexing(oldSlug, "글 비공개");
+        }
+        break;
       }
 
       if (newStatus === "published" && newSlug) {
