@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import { auth } from "@/lib/auth";
-import { notifySlack } from "@/lib/slack";
+import { notify } from "@/lib/notifications";
 import { moveTempPostImages } from "@/lib/post-images";
 
 export async function POST(request: NextRequest) {
@@ -124,7 +124,15 @@ export async function POST(request: NextRequest) {
     }
 
     revalidateTag("table:dinn_posts", { expire: 0 });
-    notifySlack(`글 등록: ${post.title} (${getStatusFromPost(post)})`, "green");
+    notify({
+      title: "글 등록",
+      message: post.title,
+      level: "success",
+      fields: [
+        { name: "상태", value: getStatusFromPost(post), inline: true },
+        { name: "슬러그", value: post.slug ?? "-", inline: true },
+      ],
+    });
     return NextResponse.json({ data: post, status: getStatusFromPost(post) });
   } catch (error) {
     console.error("Error in POST /api/posts:", error);

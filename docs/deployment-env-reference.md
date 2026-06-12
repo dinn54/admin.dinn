@@ -30,7 +30,7 @@ docs/deployment-env-reference.md
 포함 기준:
 
 - Next.js 앱 코드가 직접 참조하는 env만 둡니다.
-- GitHub Actions, Discord, Vercel CLI 전용 secret은 넣지 않습니다.
+- GitHub Actions, Vercel CLI 전용 secret은 넣지 않습니다.
 - 값은 예시 placeholder만 사용합니다.
 
 ### `docs/deployment-env-reference.md`
@@ -96,7 +96,7 @@ cat .vercel/project.json
 
 ### DISCORD_WEBHOOK_URL
 
-배포 성공/실패 알림을 받을 Discord 채널 Webhook URL입니다.
+GitHub Actions에서 배포 성공/실패 알림을 보낼 Discord 채널 Webhook URL입니다.
 
 주의:
 
@@ -124,7 +124,7 @@ GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY=
 WEBHOOK_SECRET=
 NEXT_PUBLIC_SERVICE_DINN_DEV_DOMAIN=
 
-SLACK_WEBHOOK_URL=
+DISCORD_WEBHOOK_URL=
 ```
 
 ### Supabase
@@ -200,20 +200,21 @@ NEXT_PUBLIC_SERVICE_DINN_DEV_DOMAIN=
 - Supabase webhook 설정의 secret 값과 `WEBHOOK_SECRET`이 일치해야 합니다.
 - `NEXT_PUBLIC_SERVICE_DINN_DEV_DOMAIN`은 예: `https://dinn.dev` 형식입니다.
 
-### Slack
+### Discord Notifications
 
 ```text
-SLACK_WEBHOOK_URL=
+DISCORD_WEBHOOK_URL=
 ```
 
 역할:
 
-- 기존 Slack Incoming Webhook 알림용입니다.
+- admin.dinn 런타임에서 글 등록/수정/삭제와 인덱싱 결과 알림을 보낼 Discord 채널 Webhook URL입니다.
 
 주의:
 
-- Discord 배포 알림 전환 후에도 앱 내부 Slack 알림을 유지할지 결정해야 합니다.
-- 제거할 경우 `lib/slack.ts`, `scripts/test-slack.ts` 사용처도 함께 정리합니다.
+- GitHub Actions secret의 `DISCORD_WEBHOOK_URL`과 이름은 같지만 저장 위치가 다릅니다.
+- 앱 런타임 알림용 값은 Vercel Project Environment Variables에 등록해야 합니다.
+- 배포 알림용 값은 GitHub repository secrets에 등록해야 합니다.
 
 ## Check Before Switching Deployment
 
@@ -240,6 +241,7 @@ GOOGLE_SERVICE_ACCOUNT_EMAIL
 GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
 WEBHOOK_SECRET
 NEXT_PUBLIC_SERVICE_DINN_DEV_DOMAIN
+DISCORD_WEBHOOK_URL
 ```
 
 위 값들이 Vercel production environment에 있어야 합니다.
@@ -292,5 +294,5 @@ GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY=
 WEBHOOK_SECRET=
 NEXT_PUBLIC_SERVICE_DINN_DEV_DOMAIN=
 
-SLACK_WEBHOOK_URL=
+DISCORD_WEBHOOK_URL=
 ```

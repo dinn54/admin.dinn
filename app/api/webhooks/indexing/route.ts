@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requestIndexing, requestDeindexing } from "@/lib/google-indexing";
 import { pingSitemaps } from "@/lib/sitemap-ping";
-import { notifySlack } from "@/lib/slack";
+import { notify } from "@/lib/notifications";
 
 interface WebhookRecord {
   slug?: string;
@@ -41,10 +41,19 @@ export async function POST(request: NextRequest) {
   async function indexing(slug: string, action: "등록" | "수정") {
     try {
       await Promise.all([requestIndexing(slug), pingSitemaps()]);
-      notifySlack(`인덱싱 요청 완료 (${action}): /posts/${slug}`, action === "등록" ? "green" : "yellow");
+      notify({
+        title: `인덱싱 요청 완료 (${action})`,
+        message: `/posts/${slug}`,
+        level: action === "등록" ? "success" : "warning",
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      notifySlack(`인덱싱 요청 실패 (${action}): /posts/${slug}\n${message}`, "red");
+      notify({
+        title: `인덱싱 요청 실패 (${action})`,
+        message,
+        level: "error",
+        fields: [{ name: "경로", value: `/posts/${slug}`, inline: false }],
+      });
       console.error(`[Google Indexing] 실패 (${action}):`, error);
     }
   }
@@ -55,10 +64,19 @@ export async function POST(request: NextRequest) {
   ) {
     try {
       await requestDeindexing(slug);
-      notifySlack(`인덱싱 제거 완료 (${action}): /posts/${slug}`, "red");
+      notify({
+        title: `인덱싱 제거 완료 (${action})`,
+        message: `/posts/${slug}`,
+        level: "warning",
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      notifySlack(`인덱싱 제거 실패 (${action}): /posts/${slug}\n${message}`, "red");
+      notify({
+        title: `인덱싱 제거 실패 (${action})`,
+        message,
+        level: "error",
+        fields: [{ name: "경로", value: `/posts/${slug}`, inline: false }],
+      });
       console.error(`[Google Indexing] 제거 실패 (${action}):`, error);
     }
   }

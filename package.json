@@ -10,7 +10,7 @@
     "lint": "eslint",
     "test:e2e": "playwright test",
     "gen:types": "supabase gen types typescript --project-id mowzqxruruhcvjgpzzdb > lib/database.types.ts",
-    "test:slack": "tsx scripts/test-slack.ts"
+    "test:notification": "tsx scripts/test-notification.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.0.0",

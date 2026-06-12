@@ -50,13 +50,36 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DEPLOY_URL: ${{ steps.deploy.outputs.url }}
         run: |
+          short_sha="${GITHUB_SHA::7}"
+          commit_message="$(git log -1 --pretty=%s)"
+          commit_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA"
+          run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
           payload="$(jq -n \
-            --arg title "admin.dinn production deploy succeeded" \
-            --arg url "$DEPLOY_URL" \
-            --arg sha "$GITHUB_SHA" \
+            --arg title "프로덕션 배포 성공" \
+            --arg description "admin.dinn production 배포가 완료됐습니다." \
+            --arg deployment "$DEPLOY_URL" \
+            --arg branch "$GITHUB_REF_NAME" \
+            --arg commit "$short_sha - $commit_message" \
+            --arg commit_url "$commit_url" \
             --arg actor "$GITHUB_ACTOR" \
-            --arg run_url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
-            '{embeds:[{title:$title,color:2260342,fields:[{name:"Deployment",value:$url,inline:false},{name:"Commit",value:$sha,inline:false},{name:"Actor",value:$actor,inline:true},{name:"Actions Run",value:$run_url,inline:false}]}]}' \
+            --arg run_url "$run_url" \
+            '{
+              embeds: [
+                {
+                  title: $title,
+                  description: $description,
+                  color: 2260342,
+                  fields: [
+                    {name: "배포", value: ("[배포 URL 열기](" + $deployment + ")"), inline: false},
+                    {name: "브랜치", value: $branch, inline: true},
+                    {name: "실행자", value: $actor, inline: true},
+                    {name: "커밋", value: ("[" + $commit + "](" + $commit_url + ")"), inline: false},
+                    {name: "Actions", value: ("[실행 로그 열기](" + $run_url + ")"), inline: false}
+                  ]
+                }
+              ]
+            }' \
           )"
           curl -fsS -H "Content-Type: application/json" -d "$payload" "$DISCORD_WEBHOOK_URL"
 
@@ -65,11 +88,33 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
+          short_sha="${GITHUB_SHA::7}"
+          commit_message="$(git log -1 --pretty=%s)"
+          commit_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA"
+          run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
           payload="$(jq -n \
-            --arg title "admin.dinn production deploy failed" \
-            --arg sha "$GITHUB_SHA" \
+            --arg title "프로덕션 배포 실패" \
+            --arg description "admin.dinn production 배포가 실패했습니다. Actions 로그에서 실패한 step을 확인해야 합니다." \
+            --arg branch "$GITHUB_REF_NAME" \
+            --arg commit "$short_sha - $commit_message" \
+            --arg commit_url "$commit_url" \
             --arg actor "$GITHUB_ACTOR" \
-            --arg run_url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
-            '{embeds:[{title:$title,color:15548997,fields:[{name:"Commit",value:$sha,inline:false},{name:"Actor",value:$actor,inline:true},{name:"Actions Run",value:$run_url,inline:false}]}]}' \
+            --arg run_url "$run_url" \
+            '{
+              embeds: [
+                {
+                  title: $title,
+                  description: $description,
+                  color: 15548997,
+                  fields: [
+                    {name: "브랜치", value: $branch, inline: true},
+                    {name: "실행자", value: $actor, inline: true},
+                    {name: "커밋", value: ("[" + $commit + "](" + $commit_url + ")"), inline: false},
+                    {name: "실패 로그", value: ("[Actions 로그 열기](" + $run_url + ")"), inline: false}
+                  ]
+                }
+              ]
+            }' \
           )"
           curl -fsS -H "Content-Type: application/json" -d "$payload" "$DISCORD_WEBHOOK_URL"

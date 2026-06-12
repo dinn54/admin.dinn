@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import { auth } from "@/lib/auth";
-import { notifySlack } from "@/lib/slack";
+import { notify } from "@/lib/notifications";
 
 export async function PUT(
   request: NextRequest,
@@ -134,7 +134,15 @@ export async function PUT(
     }
 
     revalidateTag("table:dinn_posts", { expire: 0 });
-    notifySlack(`글 수정: ${post.title} (${getStatusFromPost(post)})`, "yellow");
+    notify({
+      title: "글 수정",
+      message: post.title,
+      level: "warning",
+      fields: [
+        { name: "상태", value: getStatusFromPost(post), inline: true },
+        { name: "슬러그", value: post.slug ?? "-", inline: true },
+      ],
+    });
     return NextResponse.json({ data: post, status: getStatusFromPost(post) });
   } catch (error) {
     console.error("Error in PUT /api/posts/[id]:", error);
@@ -183,7 +191,12 @@ export async function DELETE(
     }
 
     revalidateTag("table:dinn_posts", { expire: 0 });
-    notifySlack(`글 삭제: ${postToDelete?.title ?? id}`, "red");
+    notify({
+      title: "글 삭제",
+      message: postToDelete?.title ?? id,
+      level: "error",
+      fields: [{ name: "Post ID", value: id, inline: false }],
+    });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error in DELETE /api/posts/[id]:", error);
