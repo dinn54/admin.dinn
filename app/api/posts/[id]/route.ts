@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import { auth } from "@/lib/auth";
 import { notify } from "@/lib/notifications";
+import { createPostSlug } from "@/lib/post-slug";
 
 export async function PUT(
   request: NextRequest,
@@ -19,7 +20,6 @@ export async function PUT(
 
     const {
       title,
-      slug,
       subtitle,
       content,
       tags,
@@ -69,6 +69,7 @@ export async function PUT(
 
     const updateData: Record<string, unknown> = {
       title,
+      slug: createPostSlug(title),
       description: subtitle,
       content,
       tags,
@@ -77,10 +78,6 @@ export async function PUT(
       updated_at: new Date().toISOString(),
     };
 
-    // Only update slug if provided
-    if (slug) {
-      updateData.slug = slug;
-    }
     if (author_name !== undefined) {
       updateData.author_name = author_name || null;
     }
@@ -147,7 +144,11 @@ export async function PUT(
           value: formatStatusChange(oldStatus, newStatus),
           inline: true,
         },
-        { name: "경로", value: getPostPath(post.slug), inline: false },
+        {
+          name: "경로",
+          value: formatPathChange(currentPost?.slug ?? null, post.slug),
+          inline: false,
+        },
         { name: "Post ID", value: post.id, inline: false },
       ],
     });
@@ -280,6 +281,13 @@ function formatStatusChange(
 
 function getPostPath(slug: string | null) {
   return slug ? `/posts/${slug}` : "-";
+}
+
+function formatPathChange(oldSlug: string | null, newSlug: string | null) {
+  const oldPath = getPostPath(oldSlug);
+  const newPath = getPostPath(newSlug);
+  if (oldPath === newPath) return newPath;
+  return `${oldPath} → ${newPath}`;
 }
 
 async function syncPostTags(postId: string, tags: string[]) {

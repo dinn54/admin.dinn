@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { auth } from "@/lib/auth";
 import { notify } from "@/lib/notifications";
 import { moveTempPostImages } from "@/lib/post-images";
+import { createPostSlug } from "@/lib/post-slug";
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -16,7 +17,6 @@ export async function POST(request: NextRequest) {
 
     const {
       title,
-      slug,
       subtitle,
       content,
       tags,
@@ -29,12 +29,14 @@ export async function POST(request: NextRequest) {
       draftId,
     } = body;
 
-    if (!title || !slug) {
+    if (!title) {
       return NextResponse.json(
-        { error: "제목과 슬러그는 필수입니다." },
+        { error: "제목은 필수입니다." },
         { status: 400 },
       );
     }
+
+    const slug = createPostSlug(title);
 
     // Determine is_visible and published_at based on status
     let is_visible = false;

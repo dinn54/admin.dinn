@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { markdownToLexicalStateString } from "@/lib/markdownToLexicalState";
 import { isLexicalEditorStateString } from "@/lib/content-format";
 import { preprocessMarkdown } from "@/lib/preprocessMarkdown";
+import { createPostSlug } from "@/lib/post-slug";
 
 export interface PostData {
   id?: string;
@@ -101,7 +102,6 @@ export default function PostEditorView({
     initialEditorStateFromProps
   );
   const [title, setTitle] = useState("");
-  const [slug, setSlug] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [status, setStatus] = useState<PostStatus>("draft");
@@ -137,21 +137,6 @@ export default function PostEditorView({
       }
     }
   }, [initialData]);
-
-  /* Effects */
-  // Auto-generate slug from title if slug is empty
-  useEffect(() => {
-    if (!title) return;
-    const autoSlug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9가-힣\s-]/g, "")
-      .trim()
-      .replace(/\s+/g, "-");
-
-    if (!slug) {
-      setSlug(autoSlug);
-    }
-  }, [title]);
 
   /* Handlers */
   const getCurrentPostData = () => {
@@ -191,7 +176,7 @@ export default function PostEditorView({
 
     const postData = {
       title,
-      slug: slug || title.toLowerCase().replace(/\s+/g, "-"),
+      slug: createPostSlug(title),
       subtitle,
       content: editorContent,
       tags,
