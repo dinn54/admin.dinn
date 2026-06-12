@@ -147,10 +147,7 @@ export async function POST(request: NextRequest) {
 
       if (oldStatus === "published" && oldSlug && newSlug && oldSlug !== newSlug) {
         if (newStatus === "published") {
-          await Promise.allSettled([
-            deindexing(oldSlug, "슬러그 변경"),
-            indexing(newSlug, getUpdateIndexingReason(oldStatus, oldHadTempImages)),
-          ]);
+          await indexing(newSlug, getUpdateIndexingReason(oldStatus, oldHadTempImages));
         } else {
           await deindexing(oldSlug, "글 비공개");
         }

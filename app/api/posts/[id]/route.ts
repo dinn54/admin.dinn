@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { auth } from "@/lib/auth";
 import { notify } from "@/lib/notifications";
 import { createPostSlug } from "@/lib/post-slug";
+import { requestDeindexing } from "@/lib/google-indexing";
 
 export async function PUT(
   request: NextRequest,
@@ -135,6 +136,14 @@ export async function PUT(
     revalidateTag("table:dinn_posts", { expire: 0 });
     const oldStatus = currentPost ? getStatusFromPost(currentPost) : null;
     const newStatus = getStatusFromPost(post);
+    if (
+      oldStatus === "published" &&
+      currentPost?.slug &&
+      post.slug &&
+      currentPost.slug !== post.slug
+    ) {
+      await deindexPreviousSlug(currentPost.slug);
+    }
     notify({
       title: getUpdateNotificationTitle(oldStatus, newStatus),
       icon: getUpdateNotificationIcon(oldStatus, newStatus),
@@ -290,6 +299,38 @@ function formatPathChange(oldSlug: string | null, newSlug: string | null) {
   const newPath = getPostPath(newSlug);
   if (oldPath === newPath) return newPath;
   return `${oldPath} → ${newPath}`;
+}
+
+async function deindexPreviousSlug(slug: string) {
+  try {
+    await requestDeindexing(slug);
+    notify({
+      title: "인덱싱 삭제 요청 완료",
+      icon: "🧹",
+      message: getPostPath(slug),
+      level: "success",
+      fields: [
+        { name: "요청 타입", value: "URL_DELETED", inline: true },
+        { name: "원인", value: "슬러그 변경", inline: true },
+        { name: "경로", value: getPostPath(slug), inline: false },
+      ],
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    notify({
+      title: "인덱싱 삭제 요청 실패",
+      icon: "🧹",
+      message: getPostPath(slug),
+      level: "error",
+      fields: [
+        { name: "요청 타입", value: "URL_DELETED", inline: true },
+        { name: "원인", value: "슬러그 변경", inline: true },
+        { name: "경로", value: getPostPath(slug), inline: false },
+        { name: "오류", value: message, inline: false },
+      ],
+    });
+    console.error("[Google Indexing] 이전 슬러그 제거 실패:", error);
+  }
 }
 
 async function syncPostTags(postId: string, tags: string[]) {
