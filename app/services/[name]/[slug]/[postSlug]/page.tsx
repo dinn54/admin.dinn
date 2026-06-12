@@ -5,7 +5,7 @@ import {
   getServiceByName,
 } from "@/lib/data";
 import { PostDetailView } from "@/components/service/post-detail-view";
-import { ClientReadOnlyLexicalViewer } from "dinn-lexical/react";
+import { DetailLexicalViewer } from "dinn-lexical/server";
 import { estimateReadTimeMinutes } from "@/lib/utils";
 
 export interface Post {
@@ -79,7 +79,7 @@ export default async function BlogPostDetailPage({
     <div className="min-h-screen bg-background flex flex-col items-center">
       <PostDetailView post={post}>
         {post.content ? (
-          <ClientReadOnlyLexicalViewer content={post.content} width="100%" />
+          <DetailLexicalViewer content={post.content} width="100%" />
         ) : (
           <div className="py-20 text-center text-slate-500">
             <p>콘텐츠를 불러올 수 없습니다.</p>
