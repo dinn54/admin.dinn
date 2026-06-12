@@ -6,10 +6,6 @@ import { Editor as SharedEditor } from "dinn-lexical/react";
 import type { ImageUploadHandler } from "dinn-lexical/react";
 import { toast } from "sonner";
 
-import TableCellActionMenuPlugin from "./plugins/TableCellActionMenuPlugin";
-import TableCellResizerPlugin from "./plugins/TableCellResizerPlugin";
-import ToolbarPlugin from "./plugins/ToolbarPlugin";
-import { InsertPlugin } from "./plugins/insert-plugin";
 import { uploadPostImage } from "@/lib/post-image-upload-client";
 
 interface EditorProps {
@@ -66,19 +62,6 @@ export function Editor(props: EditorProps) {
             : "이미지 업로드에 실패했습니다.",
         );
       }}
-      toolbar={
-        <ToolbarPlugin
-          imageUploadDraftId={imageUploadDraftId}
-          imageUploadPostId={imageUploadPostId}
-        />
-      }
-      editablePlugins={
-        <>
-          <InsertPlugin />
-          <TableCellActionMenuPlugin />
-          <TableCellResizerPlugin />
-        </>
-      }
     />
   );
 }
