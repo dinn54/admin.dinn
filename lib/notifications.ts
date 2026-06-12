@@ -21,7 +21,7 @@ interface NotificationChannel {
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 
 const LEVEL_META: Record<NotificationLevel, { color: number; label: string }> = {
-  success: { color: 0x22c55e, label: "성공" },
+  success: { color: 0x22c55e, label: "완료" },
   warning: { color: 0xf2c744, label: "주의" },
   error: { color: 0xef4444, label: "실패" },
 };

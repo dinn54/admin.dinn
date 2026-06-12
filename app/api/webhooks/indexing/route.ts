@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       notify({
         title: `인덱싱 제거 완료 (${action})`,
         message: `/posts/${slug}`,
-        level: "warning",
+        level: "success",
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

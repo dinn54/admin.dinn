@@ -194,7 +194,7 @@ export async function DELETE(
     notify({
       title: "글 삭제",
       message: postToDelete?.title ?? id,
-      level: "error",
+      level: "success",
       fields: [{ name: "Post ID", value: id, inline: false }],
     });
     return NextResponse.json({ success: true });
