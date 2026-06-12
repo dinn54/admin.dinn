@@ -253,6 +253,16 @@ GitHub Actions가 Vercel production 배포를 맡으면 Vercel Git Integration �
 - Vercel project의 Git 자동 배포를 끄거나 무시 설정을 적용합니다.
 - production 배포는 GitHub Actions workflow 하나만 담당하게 합니다.
 
+## Workflow Build Mode
+
+GitHub Actions workflow는 `vercel deploy --prod`로 Vercel 원격 빌드를 실행합니다.
+
+이유:
+
+- Vercel의 sensitive/encrypted runtime env는 로컬 `vercel build`에 실제 값이 내려오지 않을 수 있습니다.
+- 원격 빌드를 사용하면 Vercel Production Environment Variables가 Vercel 빌드 환경에서 직접 주입됩니다.
+- GitHub Actions는 배포 트리거와 Discord 알림만 담당하고, 실제 Next.js production build는 Vercel이 수행합니다.
+
 ## Final Env List
 
 ### GitHub Actions Secrets
