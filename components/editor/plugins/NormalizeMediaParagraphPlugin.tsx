@@ -3,10 +3,12 @@
 import { useEffect } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $isRootOrShadowRoot, $isParagraphNode, ParagraphNode } from "lexical";
-import { $isImageNode } from "../nodes/ImageNode";
-import { $isYouTubeNode } from "../nodes/YouTubeNode";
-import { $isTweetNode } from "../nodes/TweetNode";
-import { $isHorizontalRuleNode } from "../nodes/HorizontalRuleNode";
+import {
+  $isHorizontalRuleNode,
+  $isImageNode,
+  $isTweetNode,
+  $isYouTubeNode,
+} from "dinn-lexical/react";
 
 function isMediaNode(child: ReturnType<ParagraphNode["getChildren"]>[number]): boolean {
   return (

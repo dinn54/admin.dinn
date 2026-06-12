@@ -1,19 +1,16 @@
 
 import {
-  LexicalCommand,
-  createCommand,
   COMMAND_PRIORITY_EDITOR,
 } from 'lexical';
 import { $insertNodeToNearestRoot } from '@lexical/utils';
 import { useEffect } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
-import { INSERT_TWEET_COMMAND, $createTweetNode } from '../nodes/TweetNode';
-import { $createYouTubeNode } from '../nodes/YouTubeNode';
-
-// YouTube insert command
-export const INSERT_YOUTUBE_COMMAND: LexicalCommand<string> = createCommand(
-  'INSERT_YOUTUBE_COMMAND'
-);
+import {
+  $createTweetNode,
+  $createYouTubeNode,
+  INSERT_TWEET_COMMAND,
+  INSERT_YOUTUBE_COMMAND,
+} from "dinn-lexical/react";
 
 export function InsertPlugin() {
     const [editor] = useLexicalComposerContext();

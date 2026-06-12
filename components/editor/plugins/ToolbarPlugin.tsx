@@ -88,11 +88,15 @@ import {
   DialogTitle,
 } from "../../ui/dialog";
 import { InsertDialog, InsertDialogData, InsertType } from "./insert-dialog";
-import { INSERT_IMAGE_COMMAND, UPLOAD_IMAGE_FILES_COMMAND } from "dinn-lexical/react";
-import { $isImageNode } from "../nodes/ImageNode";
-import { INSERT_TWEET_COMMAND, $isTweetNode } from "../nodes/TweetNode";
-import { $isYouTubeNode } from "../nodes/YouTubeNode";
-import { INSERT_YOUTUBE_COMMAND } from "./insert-plugin";
+import {
+  $isImageNode,
+  $isTweetNode,
+  $isYouTubeNode,
+  INSERT_IMAGE_COMMAND,
+  INSERT_TWEET_COMMAND,
+  INSERT_YOUTUBE_COMMAND,
+  UPLOAD_IMAGE_FILES_COMMAND,
+} from "dinn-lexical/react";
 import {
   INSERT_TABLE_COMMAND,
   $getTableCellNodeFromLexicalNode,
