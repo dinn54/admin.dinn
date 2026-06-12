@@ -34,6 +34,22 @@ export default function LexicalEditableMediaDevPage() {
             />
           </div>
         </section>
+
+        <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <div className="text-sm font-medium text-slate-900">Read-only Editor</div>
+            <div className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
+              readOnly=true
+            </div>
+          </div>
+          <div className="h-[760px] rounded-2xl border border-slate-200 bg-white">
+            <Editor
+              content={fixture.content}
+              outputFormat="json"
+              readOnly={true}
+            />
+          </div>
+        </section>
       </div>
     </main>
   );
